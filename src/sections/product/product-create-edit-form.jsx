@@ -103,22 +103,28 @@ export function ProductCreateEditForm({ currentProduct }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      // Auto-upload any File objects before saving
+      // Upload any File objects directly to Cloudinary
       let images = data.images ?? [];
       const newFiles = images.filter((f) => f instanceof File);
       if (newFiles.length > 0) {
-        const formData = new FormData();
-        newFiles.forEach((f) => formData.append('files', f));
-        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-        if (!uploadRes.ok) {
-          const errData = await uploadRes.json().catch(() => ({}));
-          throw new Error(errData.error || 'Image upload failed');
-        }
-        const { urls } = await uploadRes.json();
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+        const uploadedUrls = await Promise.all(
+          newFiles.map(async (file) => {
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('upload_preset', uploadPreset);
+            fd.append('folder', 'ench4nt/products');
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: fd });
+            if (!res.ok) throw new Error('Image upload failed');
+            const result = await res.json();
+            return result.secure_url;
+          })
+        );
         images = images.map((f) => {
           if (!(f instanceof File)) return f;
           const idx = newFiles.indexOf(f);
-          return idx !== -1 ? urls[idx] : f;
+          return idx !== -1 ? uploadedUrls[idx] : f;
         });
       }
 
@@ -167,7 +173,6 @@ export function ProductCreateEditForm({ currentProduct }) {
 
   const handleUploadFiles = useCallback(async () => {
     const currentImages = values.images ?? [];
-    // Only upload File objects (not already-saved URL strings)
     const newFiles = currentImages.filter((f) => f instanceof File);
     if (newFiles.length === 0) {
       toast.success('Зураг хадгалагдсан байна!');
@@ -175,22 +180,33 @@ export function ProductCreateEditForm({ currentProduct }) {
     }
 
     try {
-      const formData = new FormData();
-      newFiles.forEach((file) => formData.append('files', file));
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
-      const { urls } = await res.json();
+      const uploadedUrls = await Promise.all(
+        newFiles.map(async (file) => {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('upload_preset', uploadPreset);
+          formData.append('folder', 'ench4nt/products');
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+          if (!res.ok) throw new Error('Cloudinary upload failed');
+          const data = await res.json();
+          return data.secure_url;
+        })
+      );
 
-      // Replace File objects with saved URL strings in the form
       const savedUrls = currentImages.map((f) => {
-        if (!(f instanceof File)) return f; // already a URL, keep it
+        if (!(f instanceof File)) return f;
         const idx = newFiles.indexOf(f);
-        return idx !== -1 ? urls[idx] : f;
+        return idx !== -1 ? uploadedUrls[idx] : f;
       });
 
       setValue('images', savedUrls, { shouldValidate: true });
-      toast.success(`${urls.length} зураг амжилттай хадгалагдлаа!`);
+      toast.success(`${uploadedUrls.length} зураг амжилттай хадгалагдлаа!`);
     } catch (err) {
       console.error(err);
       toast.error('Зураг хадгалахад алдаа гарлаа.');
