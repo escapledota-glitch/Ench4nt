@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs cat *)",
+      "Bash(yarn add *)",
+      "Bash(mv \"T shirt front.png\" tshirt-front.png)",
+      "Bash(mv \"t shirt back.png\" tshirt-back.png)",
+      "Bash(mv \"Hoodie front.png\" hoodie-front.png)",
+      "Bash(mv \"Hoodie back.png\" hoodie-back.png)",
+      "Bash(npm run *)",
+      "Bash(xargs grep *)"
+    ]
+  }
+}

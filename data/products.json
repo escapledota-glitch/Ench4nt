@@ -1,0 +1,34 @@
+[
+  {
+    "name": "yw",
+    "description": "",
+    "images": [
+      "/products/u1598142663_A_stack_of_premium_black_and-1776418896554.png"
+    ],
+    "code": "1",
+    "sku": "",
+    "quantity": 12,
+    "colors": [
+      "#FFC0CB"
+    ],
+    "sizes": [],
+    "tags": [],
+    "gender": [],
+    "price": 1,
+    "category": "T-shirts",
+    "subDescription": "1",
+    "taxes": null,
+    "priceSale": null,
+    "saleLabel": {
+      "enabled": false,
+      "content": ""
+    },
+    "newLabel": {
+      "enabled": false,
+      "content": ""
+    },
+    "id": "local-1776418896861",
+    "createdAt": "2026-04-17T09:41:36.861Z",
+    "updatedAt": "2026-04-17T09:41:36.861Z"
+  }
+]
