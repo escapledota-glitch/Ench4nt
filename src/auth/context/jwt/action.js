@@ -44,7 +44,7 @@ export const signUp = async ({ email, password, firstName, lastName }) => {
   };
 
   try {
-    const res = await axios.post(endpoints.auth.signUp, params);
+    const res = await localAxios.post('/api/auth/sign-up', params);
 
     const { accessToken } = res.data;
 

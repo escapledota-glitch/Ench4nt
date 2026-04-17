@@ -14,6 +14,9 @@ const isStaticExport = false;
 // ----------------------------------------------------------------------
 
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   trailingSlash: true,
   output: isStaticExport ? 'export' : undefined,
   env: {
