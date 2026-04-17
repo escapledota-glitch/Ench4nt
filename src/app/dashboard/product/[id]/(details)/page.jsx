@@ -6,6 +6,7 @@ import { ProductDetailsView } from 'src/sections/product/view';
 
 // ----------------------------------------------------------------------
 
+export const dynamic = 'force-dynamic';
 export const metadata = { title: `Product details | Dashboard - ${CONFIG.appName}` };
 
 export default async function Page({ params }) {

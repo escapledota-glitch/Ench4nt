@@ -15,7 +15,8 @@ export async function PUT(req, { params }) {
   try {
     const { id } = await params;
     const data = await req.json();
-    const images = Array.isArray(data.images) ? data.images : [];
+    const images = (Array.isArray(data.images) ? data.images : [])
+      .filter((img) => typeof img === 'string' && img.startsWith('http'));
     const { data: product, error } = await supabaseServer
       .from('products')
       .update({ ...data, coverUrl: images[0] || data.coverUrl || '', images, updated_at: new Date().toISOString() })

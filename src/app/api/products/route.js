@@ -13,7 +13,8 @@ export async function GET() {
 export async function POST(req) {
   try {
     const data = await req.json();
-    const images = Array.isArray(data.images) ? data.images : [];
+    const images = (Array.isArray(data.images) ? data.images : [])
+      .filter((img) => typeof img === 'string' && img.startsWith('http'));
     const { data: product, error } = await supabaseServer
       .from('products')
       .insert({ ...data, id: undefined, coverUrl: images[0] || '', images })
