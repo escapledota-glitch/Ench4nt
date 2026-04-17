@@ -23,11 +23,16 @@ const nextConfig = {
     BUILD_STATIC_EXPORT: JSON.stringify(isStaticExport),
   },
   // Without --turbopack (next dev)
-  webpack(config) {
+  webpack(config, { isServer }) {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
+
+    config.resolve.alias['onnxruntime-web/webgpu'] = false;
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'onnxruntime-web', 'onnxruntime-web/webgpu'];
+    }
 
     return config;
   },
