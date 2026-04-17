@@ -110,14 +110,16 @@ export function ProductCreateEditForm({ currentProduct }) {
         const formData = new FormData();
         newFiles.forEach((f) => formData.append('files', f));
         const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-        if (uploadRes.ok) {
-          const { urls } = await uploadRes.json();
-          images = images.map((f) => {
-            if (!(f instanceof File)) return f;
-            const idx = newFiles.indexOf(f);
-            return idx !== -1 ? urls[idx] : f;
-          });
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errData.error || 'Image upload failed');
         }
+        const { urls } = await uploadRes.json();
+        images = images.map((f) => {
+          if (!(f instanceof File)) return f;
+          const idx = newFiles.indexOf(f);
+          return idx !== -1 ? urls[idx] : f;
+        });
       }
 
       const updatedData = {
