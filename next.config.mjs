@@ -17,6 +17,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'api-dev-minimal-v700.pages.dev' },
+    ],
+  },
   trailingSlash: true,
   output: isStaticExport ? 'export' : undefined,
   env: {

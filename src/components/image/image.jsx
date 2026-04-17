@@ -1,11 +1,16 @@
 'use client';
 
+import { CldImage } from 'next-cloudinary';
 import { useInView } from 'framer-motion';
 import { mergeRefs, mergeClasses } from 'minimal-shared/utils';
 import { useRef, useState, useCallback, startTransition } from 'react';
 
 import { imageClasses } from './classes';
 import { ImageImg, ImageRoot, ImageOverlay, ImagePlaceholder } from './styles';
+
+function isCloudinaryUrl(src) {
+  return typeof src === 'string' && src.includes('res.cloudinary.com');
+}
 
 // ----------------------------------------------------------------------
 
@@ -68,15 +73,26 @@ export function Image({
       showPlaceholder && (
         <ImagePlaceholder className={imageClasses.placeholder} {...slotProps?.placeholder} />
       ),
-    image: () => (
-      <ImageImg
-        src={src}
-        alt={alt}
-        onLoad={handleImageLoad}
-        className={imageClasses.img}
-        {...slotProps?.img}
-      />
-    ),
+    image: () =>
+      isCloudinaryUrl(src) ? (
+        <CldImage
+          src={src}
+          alt={alt}
+          width={800}
+          height={800}
+          onLoad={handleImageLoad}
+          className={imageClasses.img}
+          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+        />
+      ) : (
+        <ImageImg
+          src={src}
+          alt={alt}
+          onLoad={handleImageLoad}
+          className={imageClasses.img}
+          {...slotProps?.img}
+        />
+      ),
   };
 
   return (
