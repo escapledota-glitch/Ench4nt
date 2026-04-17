@@ -1,17 +1,13 @@
-import { join } from 'path';
-import { readFile } from 'fs/promises';
+import { supabaseServer } from 'src/lib/supabase-server';
 
 import axios, { endpoints } from 'src/lib/axios';
 
 // ----------------------------------------------------------------------
 
 async function readLocalProducts() {
-  try {
-    const raw = await readFile(join(process.cwd(), 'data', 'products.json'), 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+  const { data, error } = await supabaseServer.from('products').select('*').order('created_at', { ascending: false });
+  if (error) return [];
+  return data ?? [];
 }
 
 // ----------------------------------------------------------------------
@@ -34,7 +30,7 @@ function normalizeLocal(p) {
     reviews: p.reviews ?? [],
     ratings: p.ratings ?? [],
     inventoryType: (p.quantity ?? 99) > 0 ? 'in_stock' : 'out_of_stock',
-    publish: 'published',
+    publish: p.publish || 'published',
     subDescription: p.subDescription || '',
   };
 }
@@ -47,11 +43,8 @@ export async function getProducts() {
 // ----------------------------------------------------------------------
 
 export async function getProduct(id) {
-  if (id?.startsWith('local-')) {
-    const products = await readLocalProducts();
-    const found = products.find((p) => p.id === id) || null;
-    return { product: found ? normalizeLocal(found) : null };
-  }
+  const { data } = await supabaseServer.from('products').select('*').eq('id', id).single();
+  if (data) return { product: normalizeLocal(data) };
 
   const URL = id ? `${endpoints.product.details}?productId=${id}` : '';
   const res = await axios.get(URL);
