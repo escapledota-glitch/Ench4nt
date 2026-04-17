@@ -13,9 +13,10 @@ export async function GET() {
 export async function POST(req) {
   try {
     const data = await req.json();
+    const images = Array.isArray(data.images) ? data.images : [];
     const { data: product, error } = await supabaseServer
       .from('products')
-      .insert({ ...data, id: undefined })
+      .insert({ ...data, id: undefined, coverUrl: images[0] || '', images })
       .select()
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

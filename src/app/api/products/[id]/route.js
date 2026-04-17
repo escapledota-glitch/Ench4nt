@@ -15,9 +15,10 @@ export async function PUT(req, { params }) {
   try {
     const { id } = await params;
     const data = await req.json();
+    const images = Array.isArray(data.images) ? data.images : [];
     const { data: product, error } = await supabaseServer
       .from('products')
-      .update({ ...data, updated_at: new Date().toISOString() })
+      .update({ ...data, coverUrl: images[0] || data.coverUrl || '', images, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
