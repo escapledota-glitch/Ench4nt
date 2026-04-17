@@ -13,9 +13,13 @@ export const metadata = { title: `Post details | Dashboard - ${CONFIG.appName}` 
 export default async function Page({ params }) {
   const { title } = await params;
 
-  const { post } = await getPost(title);
-
-  return <PostDetailsView post={post} />;
+  try {
+    const { post } = await getPost(title);
+    return <PostDetailsView post={post} />;
+  } catch (error) {
+    console.error('[post details]', error?.message);
+    return <PostDetailsView post={null} />;
+  }
 }
 
 // ----------------------------------------------------------------------

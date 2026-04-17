@@ -11,9 +11,13 @@ export const metadata = { title: `Product edit | Dashboard - ${CONFIG.appName}` 
 export default async function Page({ params }) {
   const { id } = await params;
 
-  const { product } = await getProduct(id);
-
-  return <ProductEditView product={product} />;
+  try {
+    const { product } = await getProduct(id);
+    return <ProductEditView product={product} />;
+  } catch (error) {
+    console.error('[product edit]', error?.message);
+    return <ProductEditView product={null} />;
+  }
 }
 
 // ----------------------------------------------------------------------

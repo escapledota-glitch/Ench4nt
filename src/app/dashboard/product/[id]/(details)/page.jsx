@@ -11,9 +11,13 @@ export const metadata = { title: `Product details | Dashboard - ${CONFIG.appName
 export default async function Page({ params }) {
   const { id } = await params;
 
-  const { product } = await getProduct(id);
-
-  return <ProductDetailsView product={product} />;
+  try {
+    const { product } = await getProduct(id);
+    return <ProductDetailsView product={product} />;
+  } catch (error) {
+    console.error('[product details]', error?.message);
+    return <ProductDetailsView product={null} />;
+  }
 }
 
 // ----------------------------------------------------------------------
