@@ -4,8 +4,19 @@ import { CONFIG } from 'src/global-config';
 
 // ----------------------------------------------------------------------
 
+function getBaseURL() {
+  if (CONFIG.serverUrl) return CONFIG.serverUrl;
+  // Server-side on Vercel: construct absolute URL from VERCEL_URL
+  if (typeof window === 'undefined') {
+    const vercelUrl = process.env.VERCEL_URL;
+    if (vercelUrl) return `https://${vercelUrl}`;
+    return 'http://localhost:3032';
+  }
+  return '';
+}
+
 const axiosInstance = axios.create({
-  baseURL: CONFIG.serverUrl,
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
