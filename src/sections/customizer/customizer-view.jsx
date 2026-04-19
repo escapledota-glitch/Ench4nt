@@ -211,6 +211,7 @@ export function CustomizerView({ initialImage }) {
   const ctxRef = useRef(null);
   const sizeRef = useRef({ W: 0, H: 0 });
   const loadedImgs = useRef({});
+  const customMockupImg = useRef(null); // product image used as mockup background
   const dragging = useRef(false);
   const dragMode = useRef('design');
   const dragAction = useRef('move'); // 'move' | 'rotate' | 'resize'
@@ -324,9 +325,9 @@ export function CustomizerView({ initialImage }) {
         ctx.arc(x, y, 1, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw mockup using actual product photo for current type + color + view
+    // Draw mockup — use custom product image if set, otherwise use garment mockup
     const key = `${S.current.type}_${S.current.colorId}_${S.current.view}`;
-    const mockImg = loadedImgs.current[key];
+    const mockImg = customMockupImg.current || loadedImgs.current[key];
 
     if (mockImg) {
       const iw = mockImg.naturalWidth || mockImg.width;
@@ -431,20 +432,13 @@ export function CustomizerView({ initialImage }) {
     return () => { clearTimeout(timer); window.removeEventListener('resize', resizeCanvas); };
   }, [resizeCanvas]);
 
-  // Auto-load product image passed via ?image= query param
+  // Auto-load product image as mockup background when opened from shop
   useEffect(() => {
     if (!initialImage) return;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const id = nextId();
-      S.current.designs.push({ id, img, dx: 0.5, dy: 0.38, size: 30, rot: 0, op: 100, blend: 'normal' });
-      S.current.selDesignId = id;
-      setDesigns(S.current.designs.map((d) => ({ id: d.id, name: `Зураг ${d.id}` })));
-      setSelDesignId(id);
-      setDSize(30); setDRot(0); setDOp(100); setDBlend('normal');
-      dragMode.current = 'design'; setActiveDragMode('design');
-      setActiveTab('design');
+      customMockupImg.current = img;
       redraw();
     };
     img.src = initialImage;
@@ -758,6 +752,7 @@ export function CustomizerView({ initialImage }) {
 
   // ── GLOBAL ────────────────────────────────────────────────────────────────
   const applyType = (t) => {
+    customMockupImg.current = null; // clear product mockup when switching garment type
     S.current.type = t; setType(t);
     if (!MOCKUP_IMGS[t]?.[S.current.colorId]?.front) {
       const first = Object.keys(MOCKUP_IMGS[t] || {})[0] || 'black';
