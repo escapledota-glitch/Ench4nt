@@ -73,6 +73,11 @@ export const navData = [
         ],
       },
       {
+        title: 'Мокап зургууд',
+        path: paths.dashboard.mockup.root,
+        icon: ICONS.file,
+      },
+      {
         title: 'Захиалга',
         path: paths.dashboard.order.root,
         icon: ICONS.order,

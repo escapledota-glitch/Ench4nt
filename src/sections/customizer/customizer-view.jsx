@@ -13,7 +13,7 @@ import Box from '@mui/material/Box';
 const M = (f, b) => ({ front: f, back: b || f });
 const P = (name) => `/mockups/${name.split(' ').join('%20')}`;
 
-const MOCKUP_IMGS = {
+const FALLBACK_MOCKUP_IMGS = {
   tshirt: {
     black:  M(P('Black T shirt Front.png'),       P('Black t shirt back.png')),
     white:  M(P('white tshirt-front.png'),         P('white tshirt-back.png')),
@@ -40,7 +40,7 @@ const MOCKUP_IMGS = {
   },
 };
 
-const VARIANTS = [
+const FALLBACK_VARIANTS = [
   { id: 'black',  name: 'Хар',      hex: '#0a0a0a' },
   { id: 'white',  name: 'Цагаан',   hex: '#f0f0f0' },
   { id: 'gray',   name: 'Саарал',   hex: '#888888' },
@@ -51,6 +51,24 @@ const VARIANTS = [
   { id: 'yellow', name: 'Шар',      hex: '#d4a017' },
   { id: 'purple', name: 'Ягаан',    hex: '#6a0dad' },
 ];
+
+function buildMockupData(rows) {
+  if (!rows || rows.length === 0) return { imgs: FALLBACK_MOCKUP_IMGS, variants: FALLBACK_VARIANTS };
+
+  const imgs = {};
+  const variantMap = {};
+
+  rows.forEach((row) => {
+    if (!imgs[row.garment_type]) imgs[row.garment_type] = {};
+    imgs[row.garment_type][row.color_id] = M(row.front_url, row.back_url || row.front_url);
+    if (!variantMap[row.color_id]) {
+      variantMap[row.color_id] = { id: row.color_id, name: row.color_name, hex: row.color_hex };
+    }
+  });
+
+  const variants = Object.values(variantMap);
+  return { imgs, variants };
+}
 
 const BG_COLORS = [
   { hex: '#0d0d16', name: 'Dark' },
@@ -171,6 +189,22 @@ function SectionLabel({ children }) {
 export function CustomizerView() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme !== 'light';
+
+  const [MOCKUP_IMGS, setMockupImgs] = useState(FALLBACK_MOCKUP_IMGS);
+  const [VARIANTS, setVariants] = useState(FALLBACK_VARIANTS);
+
+  useEffect(() => {
+    fetch('/api/mockups')
+      .then((r) => r.json())
+      .then(({ mockups }) => {
+        if (mockups && mockups.length > 0) {
+          const { imgs, variants } = buildMockupData(mockups);
+          setMockupImgs(imgs);
+          setVariants(variants);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -389,7 +423,7 @@ export function CustomizerView() {
         });
       });
     });
-  }, [redraw]);
+  }, [MOCKUP_IMGS, redraw]);
 
   useEffect(() => {
     const timer = setTimeout(resizeCanvas, 80);

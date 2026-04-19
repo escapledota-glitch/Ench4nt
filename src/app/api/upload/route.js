@@ -12,6 +12,9 @@ cloudinary.config({
 
 export async function POST(req) {
   try {
+    const { searchParams } = new URL(req.url);
+    const folder = searchParams.get('folder') || 'ench4nt/products';
+
     const formData = await req.formData();
     const files = formData.getAll('files');
 
@@ -29,7 +32,7 @@ export async function POST(req) {
 
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: 'ench4nt/products' },
+          { folder },
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
