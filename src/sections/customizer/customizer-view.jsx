@@ -71,14 +71,14 @@ function buildMockupData(rows) {
 }
 
 const BG_COLORS = [
-  { hex: '#0d0d16', name: 'Dark' },
-  { hex: '#111118', name: 'Darker' },
-  { hex: '#000000', name: 'Black' },
-  { hex: '#1a0a2e', name: 'Purple Dark' },
-  { hex: '#0a1628', name: 'Navy Dark' },
-  { hex: '#f5f5f5', name: 'Light Gray' },
-  { hex: '#e8e8e8', name: 'Gray' },
-  { hex: '#ffffff', name: 'White' },
+  { hex: '#111118', name: 'Харанхуй' },
+  { hex: '#000000', name: 'Хар' },
+  { hex: '#1a0a2e', name: 'Нил ягаан' },
+  { hex: '#0a1628', name: 'Хар цэнхэр' },
+  { hex: '#0d1a0d', name: 'Хар ногоон' },
+  { hex: '#1a0a0a', name: 'Хар улаан' },
+  { hex: '#f5f5f5', name: 'Цайвар' },
+  { hex: '#ffffff', name: 'Цагаан' },
 ];
 
 const TABS = [
@@ -261,7 +261,7 @@ export function CustomizerView({ initialImage }) {
     type: 'tshirt',
     view: 'front',
     colorId: 'black',
-    bg: '#0d0d16',
+    bg: '#111118',
     mockupRect: null,
     designs: [],
     texts: [],
@@ -273,8 +273,8 @@ export function CustomizerView({ initialImage }) {
   const [type, setType] = useState('tshirt');
   const [view, setView] = useState('front');
   const [colorId, setColorId] = useState('black');
-  const [bg, setBg] = useState('#0d0d16');
-  const [bgHexInput, setBgHexInput] = useState('#0d0d16');
+  const [bg, setBg] = useState('#111118');
+  const [bgHexInput, setBgHexInput] = useState('#111118');
   const [activeTab, setActiveTab] = useState('garment');
   const [activeDragMode, setActiveDragMode] = useState('design');
 
@@ -313,17 +313,28 @@ export function CustomizerView({ initialImage }) {
     const { W, H } = sizeRef.current;
     if (!canvas || !ctx || !W) return;
 
-    // Background — user-chosen solid color
+    // Background
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = S.current.bg;
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = 'rgba(155,48,255,0.05)';
-    ctx.beginPath();
-    for (let x = 24; x < W; x += 32)
-      for (let y = 24; y < H; y += 32)
-        ctx.arc(x, y, 1, 0, Math.PI * 2);
-    ctx.fill();
+    // Subtle grid lines
+    ctx.strokeStyle = 'rgba(155,48,255,0.04)';
+    ctx.lineWidth = 0.5;
+    const gridSize = 40;
+    for (let x = 0; x < W; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Vignette — dark edges, bright center
+    const vignette = ctx.createRadialGradient(W / 2, H / 2, W * 0.25, W / 2, H / 2, W * 0.82);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.45)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
 
     // Draw mockup — use custom product image if set, otherwise use garment mockup
     const key = `${S.current.type}_${S.current.colorId}_${S.current.view}`;
@@ -1049,7 +1060,7 @@ export function CustomizerView({ initialImage }) {
 
   // ── RENDER ────────────────────────────────────────────────────────────────
   return (
-    <Box sx={{ minHeight: '100vh', background: isDark ? '#060609' : '#f4f4f6', color: isDark ? '#e0e0e0' : '#111', pt: { xs: '64px', md: '88px' }, pb: { xs: '80px', md: 8 }, transition: 'background 0.3s, color 0.3s' }}>
+    <Box sx={{ minHeight: '100vh', background: isDark ? 'radial-gradient(ellipse at 50% 0%, #120a20 0%, #060609 50%)' : '#f0f0f4', color: isDark ? '#e0e0e0' : '#111', pt: { xs: '64px', md: '88px' }, pb: { xs: '80px', md: 8 }, transition: 'background 0.3s, color 0.3s' }}>
 
       {/* Page header */}
       <Box sx={{ px: { xs: 2, md: 5 }, mb: { xs: 1, md: 2 } }}>
@@ -1108,11 +1119,17 @@ export function CustomizerView({ initialImage }) {
               position: 'relative',
               width: '100%',
               aspectRatio: '1 / 1',
-              maxHeight: { xs: 'min(92vw, 520px)', lg: 'none' },
-              background: '#0d0d16',
+              maxHeight: { xs: 'min(92vw, 540px)', lg: 'none' },
+              background: '#07070f',
               overflow: 'hidden',
-              border: { xs: 'none', md: '1px solid rgba(155,48,255,0.14)' },
-              borderBottom: '1px solid rgba(155,48,255,0.1)',
+              borderRadius: { xs: 0, md: '12px' },
+              border: '1px solid rgba(155,48,255,0.18)',
+              boxShadow: { md: '0 0 0 1px rgba(155,48,255,0.06), 0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(155,48,255,0.08)' },
+              // Corner accent lines
+              '&::before': {
+                content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', zIndex: 10, pointerEvents: 'none',
+                background: 'linear-gradient(135deg, rgba(155,48,255,0.12) 0%, transparent 30%, transparent 70%, rgba(155,48,255,0.06) 100%)',
+              },
             }}
           >
             <canvas
@@ -1185,9 +1202,11 @@ export function CustomizerView({ initialImage }) {
         {/* ── CONTROLS COLUMN ── */}
         <Box sx={{
           display: 'flex', flexDirection: 'column',
-          background: '#09090f',
-          border: { lg: '1px solid rgba(155,48,255,0.12)' },
-          borderTop: '1px solid rgba(155,48,255,0.1)',
+          background: '#08080e',
+          borderRadius: { xs: 0, lg: '12px' },
+          border: '1px solid rgba(155,48,255,0.14)',
+          boxShadow: { lg: '0 8px 40px rgba(0,0,0,0.5)' },
+          overflow: 'hidden',
         }}>
 
           {/* Tab bar */}
