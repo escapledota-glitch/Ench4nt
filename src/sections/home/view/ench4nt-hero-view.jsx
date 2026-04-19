@@ -106,7 +106,7 @@ export function Ench4ntHeroView() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'radial-gradient(ellipse at 50% 30%, #0d0020 0%, #04000f 40%, #000008 100%)',
+        background: '#000008',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
@@ -129,10 +129,32 @@ export function Ench4ntHeroView() {
         },
       }}
     >
+      {/* ── Video background ── */}
+      <Box
+        component="video"
+        autoPlay
+        muted
+        loop
+        playsInline
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: 0,
+        }}
+      >
+        <source src="/hero-video.mp4" type="video/mp4" />
+      </Box>
+
+      {/* ── Dark overlay so text stays readable ── */}
+      <Box sx={{ position: 'absolute', inset: 0, background: 'rgba(0,0,8,0.62)', zIndex: 1, pointerEvents: 'none' }} />
+
       {/* ── Stars layer ── */}
       <Box
         ref={starsRef}
-        sx={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}
+        sx={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}
       />
 
       {/* ── Galaxy spiral (slow rotation) ── */}
