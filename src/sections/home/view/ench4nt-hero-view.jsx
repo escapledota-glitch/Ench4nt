@@ -145,7 +145,7 @@ export function Ench4ntHeroView() {
           zIndex: 0,
         }}
       >
-        <source src="/hero-video.mp4" type="video/mp4" />
+        <source src="https://res.cloudinary.com/dr09loi2q/video/upload/q_auto/ench4nt/hero-video.mp4" type="video/mp4" />
       </Box>
 
       {/* ── Dark overlay so text stays readable ── */}
