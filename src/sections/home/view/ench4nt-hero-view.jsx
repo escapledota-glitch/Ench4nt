@@ -314,7 +314,7 @@ export function Ench4ntHeroView() {
               },
             }}
           >
-            ⚡ SHOP NOW
+            🛍 ДЭЛГҮҮР
           </Button>
 
           {/* ── ЗАГВАР БҮТЭЭХ ── */}

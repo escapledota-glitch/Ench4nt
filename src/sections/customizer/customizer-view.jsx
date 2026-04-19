@@ -580,7 +580,7 @@ export function CustomizerView({ initialImage }) {
   const endDrag = useCallback(() => { dragging.current = false; dragStart.current = null; }, []);
 
   const applyZoom = useCallback((next) => {
-    const clamped = Math.max(1, Math.min(4, next));
+    const clamped = Math.max(1, Math.min(6, next));
     zoomRef.current = clamped;
     setZoom(clamped);
   }, []);
@@ -597,41 +597,74 @@ export function CustomizerView({ initialImage }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const onTouchStart = (e) => {
-      e.preventDefault();
       if (e.touches.length === 2) {
+        // Two fingers = pinch zoom — always capture
+        e.preventDefault();
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         pinchRef.current = { dist: Math.hypot(dx, dy), zoom: zoomRef.current };
         endDrag();
       } else {
+        // Single finger — only capture if touching a design/text element
         const t = e.touches[0];
         const r = canvas.getBoundingClientRect();
-        startDrag((t.clientX - r.left) / zoomRef.current, (t.clientY - r.top) / zoomRef.current);
+        const cx = (t.clientX - r.left) / zoomRef.current;
+        const cy = (t.clientY - r.top) / zoomRef.current;
+        const hitDesign = S.current.mockupRect && [...S.current.designs].reverse().some((d) => {
+          if (!d.img) return false;
+          const { px, py, hw, hh } = getDesignGeom(d, S.current.mockupRect);
+          const { lx, ly } = toLocal(cx, cy, px, py, (d.rot * Math.PI) / 180);
+          return Math.abs(lx) <= hw + 8 && Math.abs(ly) <= hh + 8;
+        });
+        const hitText = S.current.mockupRect && [...S.current.texts].reverse().some((t2) => {
+          if (!t2.content) return false;
+          const { px, py, hw, hh } = getTextGeom(t2, S.current.mockupRect);
+          const { lx, ly } = toLocal(cx, cy, px, py, ((t2.rot || 0) * Math.PI) / 180);
+          return Math.abs(lx) <= hw + 8 && Math.abs(ly) <= hh + 8;
+        });
+        const hasSelected = S.current.selDesignId !== null || S.current.selTextId !== null;
+        if (hitDesign || hitText || hasSelected) {
+          e.preventDefault();
+          startDrag(cx, cy);
+        }
+        // else: let the event bubble so the page can scroll normally
       }
     };
+
     const onTouchMove = (e) => {
-      e.preventDefault();
       if (e.touches.length === 2 && pinchRef.current) {
+        e.preventDefault();
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.hypot(dx, dy);
-        const next = Math.max(1, Math.min(4, pinchRef.current.zoom * dist / pinchRef.current.dist));
+        // More flexible pinch: use exponential scaling for smoother feel
+        const rawRatio = dist / pinchRef.current.dist;
+        const smoothRatio = Math.pow(rawRatio, 1.4); // amplify small pinches
+        const next = Math.max(1, Math.min(6, pinchRef.current.zoom * smoothRatio));
         zoomRef.current = next; setZoom(next);
-      } else if (e.touches.length === 1 && e.touches[0]) {
+      } else if (e.touches.length === 1 && dragging.current) {
+        e.preventDefault();
         applyDragMove(e.touches[0].clientX, e.touches[0].clientY);
       }
+      // else: allow scroll
     };
-    const onTouchEnd = (e) => { e.preventDefault(); if (e.touches.length < 2) pinchRef.current = null; endDrag(); };
+
+    const onTouchEnd = (e) => {
+      if (e.touches.length < 2) pinchRef.current = null;
+      endDrag();
+    };
+
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
     canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-    canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd, { passive: true });
     return () => {
       canvas.removeEventListener('touchstart', onTouchStart);
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
     };
-  }, [startDrag, applyDragMove, endDrag]);
+  }, [startDrag, applyDragMove, endDrag, getDesignGeom, getTextGeom]);
 
   // Wheel — resize selected item
   const onWheel = (e) => {
