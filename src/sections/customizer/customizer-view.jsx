@@ -186,7 +186,7 @@ function SectionLabel({ children }) {
 
 // ----------------------------------------------------------------------
 
-export function CustomizerView() {
+export function CustomizerView({ initialImage }) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme !== 'light';
 
@@ -430,6 +430,25 @@ export function CustomizerView() {
     window.addEventListener('resize', resizeCanvas);
     return () => { clearTimeout(timer); window.removeEventListener('resize', resizeCanvas); };
   }, [resizeCanvas]);
+
+  // Auto-load product image passed via ?image= query param
+  useEffect(() => {
+    if (!initialImage) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const id = nextId();
+      S.current.designs.push({ id, img, dx: 0.5, dy: 0.38, size: 30, rot: 0, op: 100, blend: 'normal' });
+      S.current.selDesignId = id;
+      setDesigns(S.current.designs.map((d) => ({ id: d.id, name: `Зураг ${d.id}` })));
+      setSelDesignId(id);
+      setDSize(30); setDRot(0); setDOp(100); setDBlend('normal');
+      dragMode.current = 'design'; setActiveDragMode('design');
+      setActiveTab('design');
+      redraw();
+    };
+    img.src = initialImage;
+  }, [initialImage, redraw]);
 
   // ── DRAG (mouse + touch) ──────────────────────────────────────────────────
   const applyDragMove = useCallback((clientX, clientY) => {

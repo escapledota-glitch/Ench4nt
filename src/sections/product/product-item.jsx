@@ -132,7 +132,7 @@ export function ProductItem({ product, detailsHref }) {
 
       <Button
         component={RouterLink}
-        href="/customizer"
+        href={`/customizer?image=${encodeURIComponent(coverUrl)}`}
         size="small"
         variant="outlined"
         fullWidth

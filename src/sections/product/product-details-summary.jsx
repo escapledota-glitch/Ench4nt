@@ -307,7 +307,7 @@ export function ProductDetailsSummary({ items, product, onAddToCart, disableActi
 
         <Button
           component={RouterLink}
-          href="/customizer"
+          href={`/customizer?image=${encodeURIComponent(coverUrl)}`}
           size="large"
           fullWidth
           variant="outlined"
