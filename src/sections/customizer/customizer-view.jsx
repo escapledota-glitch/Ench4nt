@@ -799,6 +799,9 @@ export function CustomizerView() {
         <Btn active={type === 'tshirt'} onClick={() => applyType('tshirt')}>👕 Подволк</Btn>
         <Btn active={type === 'hoodie'} onClick={() => applyType('hoodie')}>🧥 Малгайтай цамц</Btn>
         <Btn active={type === 'longsleeve'} onClick={() => applyType('longsleeve')}>👔 Цамц</Btn>
+        <Btn active={type === 'polo'} onClick={() => applyType('polo')}>🎽 Поло</Btn>
+        <Btn active={type === 'pants'} onClick={() => applyType('pants')}>👖 Өмд</Btn>
+        <Btn active={type === 'shorts'} onClick={() => applyType('shorts')}>🩳 Шорт</Btn>
       </Box>
 
       <SectionLabel>Өнгө сонгох</SectionLabel>
@@ -819,7 +822,7 @@ export function CustomizerView() {
               component="img"
               src={MOCKUP_IMGS[type]?.[v.id]?.front || ''}
               alt={v.name}
-              sx={{ width: '100%', aspectRatio: '4/5', objectFit: 'contain', display: 'block', background: '#f5f5f5' }}
+              sx={{ width: '100%', aspectRatio: '4/5', objectFit: 'contain', display: 'block', background: 'transparent' }}
             />
             <Box sx={{
               textAlign: 'center', py: 0.6,

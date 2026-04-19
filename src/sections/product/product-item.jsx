@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import Fab, { fabClasses } from '@mui/material/Fab';
 
@@ -128,6 +129,23 @@ export function ProductItem({ product, detailsHref }) {
           🛍 {totalReviews}
         </Box>
       )}
+
+      <Button
+        component={RouterLink}
+        href="/customizer"
+        size="small"
+        variant="outlined"
+        fullWidth
+        sx={{
+          mt: 0.5,
+          fontSize: { xs: '0.65rem', sm: '0.72rem' },
+          borderColor: 'rgba(155,48,255,0.5)',
+          color: '#9b30ff',
+          '&:hover': { borderColor: '#9b30ff', background: 'rgba(155,48,255,0.08)' },
+        }}
+      >
+        🎨 Зураг наах
+      </Button>
     </Stack>
   );
 

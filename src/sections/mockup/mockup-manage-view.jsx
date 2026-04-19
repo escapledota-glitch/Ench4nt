@@ -34,6 +34,9 @@ const GARMENT_TYPES = [
   { id: 'tshirt', label: 'Подволк (T-shirt)' },
   { id: 'hoodie', label: 'Малгайтай цамц (Hoodie)' },
   { id: 'longsleeve', label: 'Цамц (Long sleeve)' },
+  { id: 'polo', label: 'Поло (Polo)' },
+  { id: 'pants', label: 'Өмд (Pants)' },
+  { id: 'shorts', label: 'Шорт (Shorts)' },
 ];
 
 const EMPTY_FORM = {

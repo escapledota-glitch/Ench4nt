@@ -13,6 +13,7 @@ import { formHelperTextClasses } from '@mui/material/FormHelperText';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { RouterLink } from 'src/routes/components';
 
 import { fCurrency, fShortenNumber } from 'src/utils/format-number';
 
@@ -303,6 +304,24 @@ export function ProductDetailsSummary({ items, product, onAddToCart, disableActi
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         {renderActions()}
+
+        <Button
+          component={RouterLink}
+          href="/customizer"
+          size="large"
+          fullWidth
+          variant="outlined"
+          startIcon={<Iconify icon="solar:palette-bold" width={22} />}
+          sx={{
+            borderColor: 'rgba(155,48,255,0.5)',
+            color: '#9b30ff',
+            fontWeight: 700,
+            '&:hover': { borderColor: '#9b30ff', background: 'rgba(155,48,255,0.08)' },
+          }}
+        >
+          Зураг наах
+        </Button>
+
         {renderShare()}
       </Stack>
     </Form>
