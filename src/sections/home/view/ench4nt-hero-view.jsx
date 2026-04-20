@@ -129,27 +129,36 @@ export function Ench4ntHeroView() {
         },
       }}
     >
-      {/* ── Video background ── */}
+      {/* ── City background image ── */}
       <Box
-        component="video"
-        autoPlay
-        muted
-        loop
-        playsInline
         sx={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          zIndex: 0,
+          position: 'absolute', inset: 0, zIndex: 0,
+          backgroundImage: 'url(https://res.cloudinary.com/dr09loi2q/image/upload/q_auto,f_auto/ench4nt/hero-bg.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 40%',
+          transform: 'scale(1.04)',
+          animation: 'heroDrift 20s ease-in-out infinite alternate',
+          '@keyframes heroDrift': {
+            '0%':   { transform: 'scale(1.04) translateY(0px)' },
+            '100%': { transform: 'scale(1.08) translateY(-12px)' },
+          },
         }}
-      >
-        <source src="https://res.cloudinary.com/dr09loi2q/video/upload/q_auto/ench4nt/hero-video.mp4" type="video/mp4" />
-      </Box>
+      />
 
-      {/* ── Dark overlay so text stays readable ── */}
-      <Box sx={{ position: 'absolute', inset: 0, background: 'rgba(0,0,8,0.62)', zIndex: 1, pointerEvents: 'none' }} />
+      {/* ── Layered overlays — match city purple/blue tones ── */}
+      {/* Bottom-up dark fade so text is readable */}
+      <Box sx={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+        background: 'linear-gradient(to top, rgba(4,0,15,0.92) 0%, rgba(10,0,25,0.65) 40%, rgba(0,0,8,0.3) 70%, transparent 100%)'
+      }} />
+      {/* Top dark fade */}
+      <Box sx={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+        background: 'linear-gradient(to bottom, rgba(4,0,15,0.5) 0%, transparent 35%)'
+      }} />
+      {/* Purple color grade matching city sky */}
+      <Box sx={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse at 50% 60%, rgba(80,0,160,0.22) 0%, transparent 70%)',
+        mixBlendMode: 'screen',
+      }} />
 
       {/* ── Stars layer ── */}
       <Box

@@ -430,6 +430,7 @@ export function CustomizerView({ initialImage }) {
       Object.entries(colors).forEach(([c, views]) => {
         Object.entries(views).forEach(([v, url]) => {
           const img = new Image();
+          img.crossOrigin = 'anonymous'; // fix canvas taint for save/export
           img.onload = () => { loadedImgs.current[`${t}_${c}_${v}`] = img; redraw(); };
           img.src = url;
         });
@@ -851,79 +852,89 @@ export function CustomizerView({ initialImage }) {
   // ── TAB PANELS ───────────────────────────────────────────────────────────
 
   const GarmentPanel = (
-    <Box sx={{ p: 2.5 }}>
+    <Box sx={{ p: 2 }}>
       <SectionLabel>Хувцасны төрөл</SectionLabel>
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1, mb: 2.5 }}>
-        <Btn active={type === 'tshirt'} onClick={() => applyType('tshirt')}>👕 Подволк</Btn>
-        <Btn active={type === 'hoodie'} onClick={() => applyType('hoodie')}>🧥 Малгайтай цамц</Btn>
-        <Btn active={type === 'longsleeve'} onClick={() => applyType('longsleeve')}>👔 Цамц</Btn>
-        <Btn active={type === 'polo'} onClick={() => applyType('polo')}>🎽 Поло</Btn>
-        <Btn active={type === 'pants'} onClick={() => applyType('pants')}>👖 Өмд</Btn>
-        <Btn active={type === 'shorts'} onClick={() => applyType('shorts')}>🩳 Шорт</Btn>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0.75, mb: 2.5 }}>
+        {[
+          { id: 'tshirt', icon: '👕', label: 'Подволк' },
+          { id: 'hoodie', icon: '🧥', label: 'Худи' },
+          { id: 'longsleeve', icon: '👔', label: 'Цамц' },
+          { id: 'polo', icon: '🎽', label: 'Поло' },
+          { id: 'pants', icon: '👖', label: 'Өмд' },
+          { id: 'shorts', icon: '🩳', label: 'Шорт' },
+        ].map((g) => (
+          <Box key={g.id} component="button" onClick={() => applyType(g.id)}
+            sx={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.3,
+              py: 1.2, px: 0.5, cursor: 'pointer', borderRadius: '8px', border: 'none',
+              background: type === g.id ? 'rgba(155,48,255,0.18)' : 'rgba(255,255,255,0.03)',
+              outline: `1.5px solid ${type === g.id ? '#9b30ff' : 'rgba(155,48,255,0.12)'}`,
+              transition: 'all 0.15s',
+              '&:hover': { background: 'rgba(155,48,255,0.1)', outline: '1.5px solid rgba(155,48,255,0.4)' },
+            }}
+          >
+            <Box sx={{ fontSize: '1.2rem', lineHeight: 1 }}>{g.icon}</Box>
+            <Box sx={{ fontSize: '0.58rem', fontFamily: '"Orbitron",sans-serif', color: type === g.id ? '#c080ff' : '#555', letterSpacing: '0.3px' }}>{g.label}</Box>
+          </Box>
+        ))}
       </Box>
 
       <SectionLabel>Өнгө сонгох</SectionLabel>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 1.5, mb: 2.5 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, mb: 2.5 }}>
         {VARIANTS.filter((v) => MOCKUP_IMGS[type]?.[v.id]?.front).map((v) => (
-          <Box
-            key={v.id}
-            onClick={() => applyColorVariant(v.id)}
+          <Box key={v.id} onClick={() => applyColorVariant(v.id)}
             sx={{
-              cursor: 'pointer', borderRadius: 1, overflow: 'hidden',
-              border: `2px solid ${colorId === v.id ? '#9b30ff' : 'rgba(155,48,255,0.15)'}`,
-              boxShadow: colorId === v.id ? '0 0 12px rgba(155,48,255,0.4)' : 'none',
+              cursor: 'pointer', borderRadius: '8px', overflow: 'hidden',
+              outline: `2px solid ${colorId === v.id ? '#9b30ff' : 'rgba(155,48,255,0.1)'}`,
+              boxShadow: colorId === v.id ? '0 0 16px rgba(155,48,255,0.5)' : 'none',
               transition: 'all 0.15s',
-              '&:hover': { borderColor: '#9b30ff', boxShadow: '0 0 8px rgba(155,48,255,0.3)' },
+              '&:hover': { outline: '2px solid rgba(155,48,255,0.5)', boxShadow: '0 0 10px rgba(155,48,255,0.25)' },
             }}
           >
-            <Box
-              component="img"
-              src={MOCKUP_IMGS[type]?.[v.id]?.front || ''}
-              alt={v.name}
-              sx={{ width: '100%', aspectRatio: '4/5', objectFit: 'contain', display: 'block', background: 'transparent' }}
-            />
+            <Box component="img" src={MOCKUP_IMGS[type]?.[v.id]?.front || ''} alt={v.name}
+              sx={{ width: '100%', aspectRatio: '3/4', objectFit: 'contain', display: 'block', background: '#0a0a14' }} />
             <Box sx={{
-              textAlign: 'center', py: 0.6,
-              fontSize: '0.62rem', fontFamily: '"Rajdhani",sans-serif', letterSpacing: '0.5px',
-              color: colorId === v.id ? '#9b30ff' : '#666',
-              background: '#0d0d18',
-            }}>
-              {v.name}
-            </Box>
+              textAlign: 'center', py: 0.5, fontSize: '0.58rem',
+              fontFamily: '"Orbitron",sans-serif', letterSpacing: '0.3px',
+              color: colorId === v.id ? '#c080ff' : '#555',
+              background: '#060610',
+            }}>{v.name}</Box>
           </Box>
         ))}
       </Box>
 
       <SectionLabel>Харах тал</SectionLabel>
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-        <Btn active={view === 'front'} onClick={() => applyView('front')}>◧ Урд тал</Btn>
-        <Btn active={view === 'back'} onClick={() => applyView('back')}>◨ Ар тал</Btn>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.75 }}>
+        {[{ v: 'front', label: '▣ Урд тал' }, { v: 'back', label: '▣ Ар тал' }].map(({ v, label }) => (
+          <Box key={v} component="button" onClick={() => applyView(v)}
+            sx={{
+              py: 1.2, border: 'none', cursor: 'pointer', borderRadius: '8px',
+              fontFamily: '"Orbitron",sans-serif', fontSize: '0.62rem', letterSpacing: '0.5px',
+              background: view === v ? 'rgba(155,48,255,0.18)' : 'rgba(255,255,255,0.03)',
+              outline: `1.5px solid ${view === v ? '#9b30ff' : 'rgba(155,48,255,0.12)'}`,
+              color: view === v ? '#c080ff' : '#555',
+              transition: 'all 0.15s',
+              '&:hover': { background: 'rgba(155,48,255,0.1)', color: '#aaa' },
+            }}
+          >{label}</Box>
+        ))}
       </Box>
     </Box>
   );
 
   const DesignPanel = (
-    <Box sx={{ p: 2.5 }}>
-      {/* Drag mode toggle */}
-      <SectionLabel>Чирэх горим</SectionLabel>
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2.5 }}>
-        <Btn active={activeDragMode === 'design'} onClick={() => { dragMode.current = 'design'; setActiveDragMode('design'); }}>🖼 Зураг</Btn>
-        <Btn active={activeDragMode === 'text'} onClick={() => { dragMode.current = 'text'; setActiveDragMode('text'); }}>✏️ Текст</Btn>
-      </Box>
-
-      {/* Upload */}
-      <SectionLabel>Зураг нэмэх</SectionLabel>
-      <label>
-        <Box
-          sx={{
-            border: '1px dashed rgba(155,48,255,0.28)', borderRadius: 1, p: '14px 16px',
-            textAlign: 'center', cursor: 'pointer', background: 'rgba(155,48,255,0.025)',
-            transition: 'all 0.2s', mb: 2,
-            '&:hover': { borderColor: '#9b30ff', background: 'rgba(155,48,255,0.07)' },
-          }}
-        >
-          <Box sx={{ fontSize: '1.4rem', mb: 0.5 }}>⬆</Box>
-          <Box sx={{ fontSize: '0.74rem', color: '#555', letterSpacing: '0.5px' }}>PNG, JPG, SVG дэмжинэ</Box>
+    <Box sx={{ p: 2 }}>
+      {/* Upload — big prominent drop zone */}
+      <label style={{ display: 'block', marginBottom: 16 }}>
+        <Box sx={{
+          border: '1.5px dashed rgba(155,48,255,0.35)', borderRadius: '10px',
+          p: '20px 16px', textAlign: 'center', cursor: 'pointer',
+          background: 'rgba(155,48,255,0.03)', transition: 'all 0.2s',
+          '&:hover': { borderColor: '#9b30ff', background: 'rgba(155,48,255,0.08)', transform: 'translateY(-1px)' },
+        }}>
+          <Box sx={{ fontSize: '1.8rem', mb: 0.75, lineHeight: 1 }}>🖼</Box>
+          <Box sx={{ fontSize: '0.75rem', color: '#ccc', fontWeight: 600, mb: 0.25 }}>Зураг оруулах</Box>
+          <Box sx={{ fontSize: '0.62rem', color: '#444', letterSpacing: '0.5px' }}>PNG · JPG · SVG · WEBP</Box>
         </Box>
         <input type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} />
       </label>
