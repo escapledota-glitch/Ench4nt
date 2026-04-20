@@ -295,8 +295,10 @@ export function CustomizerView({ initialImage }) {
 
   const [toast, setToast] = useState('');
   const [bgRemoving, setBgRemoving] = useState(false);
-  const [sendDialog, setSendDialog] = useState(false);
-  const [sendStep, setSendStep] = useState(0); // 0=idle, 1=downloaded, 2=opened
+  const [orderDialog, setOrderDialog] = useState(false);
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [orderForm, setOrderForm] = useState({ name: '', phone: '', size: 'M', quantity: 1, notes: '' });
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(1);
   const pinchRef = useRef(null);
@@ -835,18 +837,54 @@ export function CustomizerView({ initialImage }) {
   const handleDownload = useCallback(() => downloadCanvas('ench4nt-mockup.png'), [downloadCanvas]);
 
   const handleSendToMessenger = () => {
-    setSendStep(0);
-    setSendDialog(true);
+    setOrderSuccess(false);
+    setOrderForm({ name: '', phone: '', size: 'M', quantity: 1, notes: '' });
+    setOrderDialog(true);
   };
 
-  const handleDownloadDesign = useCallback(() => {
-    downloadCanvas('ench4nt-design.png');
-    setSendStep(1);
-  }, [downloadCanvas]);
+  const handleSubmitOrder = async () => {
+    if (!orderForm.name || !orderForm.phone) {
+      showToast('Нэр болон утасны дугаар оруулна уу');
+      return;
+    }
+    setOrderSubmitting(true);
+    try {
+      // Export canvas to blob
+      const canvas = canvasRef.current;
+      const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+      const formData = new FormData();
+      formData.append('files', blob, 'design.png');
 
-  const handleOpenMessengerFromDialog = () => {
-    window.open('https://www.messenger.com/t/100718614798925', '_blank');
-    setSendStep(2);
+      // Upload to Cloudinary
+      const uploadRes = await fetch('/api/upload?folder=ench4nt/orders', { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      if (!uploadData.urls?.[0]) throw new Error('Зураг байршуулж чадсангүй');
+      const designUrl = uploadData.urls[0];
+
+      // Save order to Supabase
+      const orderRes = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: orderForm.name,
+          customer_phone: orderForm.phone,
+          garment_type: garment,
+          color: colorId,
+          size: orderForm.size,
+          quantity: orderForm.quantity,
+          notes: orderForm.notes,
+          design_url: designUrl,
+        }),
+      });
+      const orderData = await orderRes.json();
+      if (orderData.error) throw new Error(orderData.error);
+
+      setOrderSuccess(true);
+    } catch (err) {
+      showToast(`Алдаа: ${err.message}`);
+    } finally {
+      setOrderSubmitting(false);
+    }
   };
 
   // ── TAB PANELS ───────────────────────────────────────────────────────────
@@ -1286,134 +1324,190 @@ export function CustomizerView({ initialImage }) {
         </Box>
       </Box>
 
-      {/* Send dialog */}
-      {sendDialog && (
+      {/* Order dialog */}
+      {orderDialog && (
         <Box sx={{
           position: 'fixed', inset: 0, zIndex: 9998,
-          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+          background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2,
         }}
-          onClick={() => { setSendDialog(false); setSendStep(0); }}
+          onClick={() => { if (!orderSubmitting) setOrderDialog(false); }}
         >
           <Box
             onClick={(e) => e.stopPropagation()}
             sx={{
-              background: '#0d0d1a', border: '1px solid rgba(155,48,255,0.3)',
-              borderRadius: 2, p: { xs: 2.5, md: 3.5 }, maxWidth: 420, width: '100%',
-              boxShadow: '0 0 60px rgba(155,48,255,0.2)',
+              background: '#0d0d1a', border: '1px solid rgba(155,48,255,0.35)',
+              borderRadius: 2, p: { xs: 2.5, md: 3.5 }, maxWidth: 440, width: '100%',
+              boxShadow: '0 0 60px rgba(155,48,255,0.25)',
+              maxHeight: '90vh', overflowY: 'auto',
             }}
           >
-            <Box sx={{ fontFamily: '"Orbitron",sans-serif', fontSize: '0.85rem', fontWeight: 700, color: '#e8e8e8', mb: 0.75, letterSpacing: '1px' }}>
-              ЗАХИАЛГА ИЛГЭЭХ
-            </Box>
-            <Box sx={{ fontSize: '0.72rem', color: '#555', mb: 2.5, lineHeight: 1.5 }}>
-              Доорх 2 алхамыг дарааллаар хийнэ үү
-            </Box>
+            {orderSuccess ? (
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Box sx={{ fontSize: '2.5rem', mb: 1.5 }}>✅</Box>
+                <Box sx={{ fontFamily: '"Orbitron",sans-serif', fontSize: '0.9rem', fontWeight: 700, color: '#4caf50', mb: 1, letterSpacing: '1px' }}>
+                  ЗАХИАЛГА АМЖИЛТТАЙ!
+                </Box>
+                <Box sx={{ fontSize: '0.72rem', color: '#888', lineHeight: 1.6, mb: 2.5 }}>
+                  Таны захиалга хүлээн авагдлаа. Бид тантай удахгүй холбогдоно.
+                </Box>
+                <Box
+                  component="button"
+                  onClick={() => window.open('https://www.messenger.com/t/100718614798925', '_blank')}
+                  sx={{
+                    width: '100%', border: 'none', cursor: 'pointer', py: 1.2, borderRadius: 1, mb: 1.5,
+                    fontFamily: '"Orbitron",sans-serif', fontSize: '0.7rem', fontWeight: 700,
+                    letterSpacing: '1px', color: '#fff',
+                    background: 'linear-gradient(135deg,#0084ff,#0056cc)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1,
+                  }}
+                >
+                  <Iconify icon="logos:messenger" width={16} /> Messenger-т холбогдох
+                </Box>
+                <Box
+                  component="button"
+                  onClick={() => setOrderDialog(false)}
+                  sx={{
+                    width: '100%', border: '1px solid rgba(155,48,255,0.2)', cursor: 'pointer',
+                    py: 1, borderRadius: 1, background: 'transparent',
+                    fontFamily: '"Orbitron",sans-serif', fontSize: '0.65rem', color: '#666',
+                    letterSpacing: '1px', '&:hover': { borderColor: '#9b30ff', color: '#ccc' },
+                  }}
+                >
+                  Хаах
+                </Box>
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ fontFamily: '"Orbitron",sans-serif', fontSize: '0.85rem', fontWeight: 700, color: '#e8e8e8', mb: 0.5, letterSpacing: '1px' }}>
+                  ЗАХИАЛГА ИЛГЭЭХ
+                </Box>
+                <Box sx={{ fontSize: '0.72rem', color: '#555', mb: 2.5, lineHeight: 1.5 }}>
+                  Мэдээллээ бөглөөд захиалгаа илгээнэ үү. Дизайн автоматаар хадгалагдана.
+                </Box>
 
-            {/* Step 1 */}
-            <Box sx={{
-              p: 2, borderRadius: 1.5, mb: 1.5,
-              border: '1px solid', transition: 'all 0.3s',
-              borderColor: sendStep >= 1 ? '#9b30ff' : 'rgba(155,48,255,0.2)',
-              background: sendStep >= 1 ? 'rgba(155,48,255,0.08)' : 'rgba(255,255,255,0.02)',
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <Box sx={{
-                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.65rem', fontWeight: 700, fontFamily: '"Orbitron",sans-serif',
-                  background: sendStep >= 1 ? '#9b30ff' : 'rgba(155,48,255,0.15)',
-                  color: sendStep >= 1 ? '#fff' : '#9b30ff',
-                }}>
-                  {sendStep >= 1 ? '✓' : '1'}
+                {/* Name */}
+                <Box sx={{ mb: 1.5 }}>
+                  <Box sx={{ fontSize: '0.65rem', color: '#888', fontFamily: '"Orbitron",sans-serif', letterSpacing: '0.5px', mb: 0.5 }}>НЭР *</Box>
+                  <Box
+                    component="input"
+                    value={orderForm.name}
+                    onChange={(e) => setOrderForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="Таны нэр"
+                    sx={{
+                      width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(155,48,255,0.2)',
+                      borderRadius: 1, px: 1.5, py: 1, color: '#e8e8e8', fontSize: '0.8rem',
+                      fontFamily: '"Rajdhani",sans-serif', outline: 'none', boxSizing: 'border-box',
+                      '&:focus': { borderColor: '#9b30ff' },
+                    }}
+                  />
                 </Box>
-                <Box sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#ccc', fontFamily: '"Orbitron",sans-serif', letterSpacing: '0.5px' }}>
-                  Дизайн татах
-                </Box>
-              </Box>
-              <Box sx={{ fontSize: '0.65rem', color: '#555', mb: 1.5, ml: '37px', lineHeight: 1.4 }}>
-                Таны дизайн PNG файл болж татагдана. Үүнийг Messenger-т хавсаргаж илгээнэ үү.
-              </Box>
-              <Box
-                component="button"
-                onClick={handleDownloadDesign}
-                sx={{
-                  ml: '37px', border: 'none', cursor: 'pointer', px: 2, py: 0.9, borderRadius: 1,
-                  fontFamily: '"Orbitron",sans-serif', fontSize: '0.65rem', fontWeight: 700,
-                  letterSpacing: '1px', textTransform: 'uppercase',
-                  background: sendStep >= 1 ? 'rgba(155,48,255,0.15)' : 'linear-gradient(135deg,#9b30ff,#6a0dad)',
-                  color: '#fff', transition: 'all 0.2s',
-                  '&:hover': { opacity: 0.85 },
-                }}
-              >
-                {sendStep >= 1 ? '✓ Татагдлаа' : '⬇ Татах'}
-              </Box>
-            </Box>
 
-            {/* Step 2 */}
-            <Box sx={{
-              p: 2, borderRadius: 1.5, mb: 2,
-              border: '1px solid', transition: 'all 0.3s',
-              opacity: sendStep >= 1 ? 1 : 0.4,
-              borderColor: sendStep >= 2 ? '#9b30ff' : 'rgba(155,48,255,0.2)',
-              background: sendStep >= 2 ? 'rgba(155,48,255,0.08)' : 'rgba(255,255,255,0.02)',
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <Box sx={{
-                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.65rem', fontWeight: 700, fontFamily: '"Orbitron",sans-serif',
-                  background: sendStep >= 2 ? '#9b30ff' : 'rgba(155,48,255,0.15)',
-                  color: sendStep >= 2 ? '#fff' : '#9b30ff',
-                }}>
-                  {sendStep >= 2 ? '✓' : '2'}
+                {/* Phone */}
+                <Box sx={{ mb: 1.5 }}>
+                  <Box sx={{ fontSize: '0.65rem', color: '#888', fontFamily: '"Orbitron",sans-serif', letterSpacing: '0.5px', mb: 0.5 }}>УТАС *</Box>
+                  <Box
+                    component="input"
+                    value={orderForm.phone}
+                    onChange={(e) => setOrderForm((f) => ({ ...f, phone: e.target.value }))}
+                    placeholder="99xxxxxx"
+                    type="tel"
+                    sx={{
+                      width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(155,48,255,0.2)',
+                      borderRadius: 1, px: 1.5, py: 1, color: '#e8e8e8', fontSize: '0.8rem',
+                      fontFamily: '"Rajdhani",sans-serif', outline: 'none', boxSizing: 'border-box',
+                      '&:focus': { borderColor: '#9b30ff' },
+                    }}
+                  />
                 </Box>
-                <Box sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#ccc', fontFamily: '"Orbitron",sans-serif', letterSpacing: '0.5px' }}>
-                  Messenger нээх
-                </Box>
-              </Box>
-              <Box sx={{ fontSize: '0.65rem', color: '#555', mb: 1.5, ml: '37px', lineHeight: 1.4 }}>
-                Messenger нээгдэнэ. Татсан зургийг 📎 дарж хавсаргаад илгээнэ үү. Бид хүлээн авсны дараа хариу илгээнэ.
-              </Box>
-              <Box
-                component="button"
-                onClick={handleOpenMessengerFromDialog}
-                disabled={sendStep < 1}
-                sx={{
-                  ml: '37px', border: 'none', cursor: sendStep >= 1 ? 'pointer' : 'not-allowed',
-                  px: 2, py: 0.9, borderRadius: 1,
-                  fontFamily: '"Orbitron",sans-serif', fontSize: '0.65rem', fontWeight: 700,
-                  letterSpacing: '1px', textTransform: 'uppercase',
-                  background: sendStep >= 1 ? 'linear-gradient(135deg,#9b30ff,#6a0dad)' : 'rgba(155,48,255,0.08)',
-                  color: sendStep >= 1 ? '#fff' : '#555', transition: 'all 0.2s',
-                  '&:hover': { opacity: sendStep >= 1 ? 0.85 : 1 },
-                }}
-              >
-                <Iconify icon="logos:messenger" width={16} style={{ flexShrink: 0 }} /> Messenger нээх
-              </Box>
-            </Box>
 
-            {sendStep >= 2 && (
-              <Box sx={{ p: 1.5, background: 'rgba(0,180,100,0.08)', border: '1px solid rgba(0,180,100,0.2)', borderRadius: 1, mb: 2 }}>
-                <Box sx={{ fontSize: '0.7rem', color: '#4caf50', fontWeight: 600, mb: 0.3 }}>✅ Амжилттай!</Box>
-                <Box sx={{ fontSize: '0.65rem', color: '#555', lineHeight: 1.4 }}>
-                  Бид таны дизайныг хүлээн авсны дараа захиалгын баталгаажуулалт болон татах холбоосыг Messenger-ээр илгээнэ.
+                {/* Size + Quantity */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
+                  <Box>
+                    <Box sx={{ fontSize: '0.65rem', color: '#888', fontFamily: '"Orbitron",sans-serif', letterSpacing: '0.5px', mb: 0.5 }}>ХЭМЖЭЭ</Box>
+                    <Box
+                      component="select"
+                      value={orderForm.size}
+                      onChange={(e) => setOrderForm((f) => ({ ...f, size: e.target.value }))}
+                      sx={{
+                        width: '100%', background: '#111120', border: '1px solid rgba(155,48,255,0.2)',
+                        borderRadius: 1, px: 1.5, py: 1, color: '#e8e8e8', fontSize: '0.8rem',
+                        fontFamily: '"Rajdhani",sans-serif', outline: 'none', cursor: 'pointer',
+                        '&:focus': { borderColor: '#9b30ff' },
+                      }}
+                    >
+                      {['XS','S','M','L','XL','XXL'].map((s) => <option key={s} value={s}>{s}</option>)}
+                    </Box>
+                  </Box>
+                  <Box>
+                    <Box sx={{ fontSize: '0.65rem', color: '#888', fontFamily: '"Orbitron",sans-serif', letterSpacing: '0.5px', mb: 0.5 }}>ТОО</Box>
+                    <Box
+                      component="input"
+                      type="number"
+                      min={1}
+                      max={99}
+                      value={orderForm.quantity}
+                      onChange={(e) => setOrderForm((f) => ({ ...f, quantity: Math.max(1, Number(e.target.value)) }))}
+                      sx={{
+                        width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(155,48,255,0.2)',
+                        borderRadius: 1, px: 1.5, py: 1, color: '#e8e8e8', fontSize: '0.8rem',
+                        fontFamily: '"Rajdhani",sans-serif', outline: 'none', boxSizing: 'border-box',
+                        '&:focus': { borderColor: '#9b30ff' },
+                      }}
+                    />
+                  </Box>
                 </Box>
-              </Box>
+
+                {/* Notes */}
+                <Box sx={{ mb: 2.5 }}>
+                  <Box sx={{ fontSize: '0.65rem', color: '#888', fontFamily: '"Orbitron",sans-serif', letterSpacing: '0.5px', mb: 0.5 }}>НЭМЭЛТ ТАЙЛБАР</Box>
+                  <Box
+                    component="textarea"
+                    value={orderForm.notes}
+                    onChange={(e) => setOrderForm((f) => ({ ...f, notes: e.target.value }))}
+                    placeholder="Тусгай хүсэлт, хаяг, тэмдэглэл..."
+                    rows={3}
+                    sx={{
+                      width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(155,48,255,0.2)',
+                      borderRadius: 1, px: 1.5, py: 1, color: '#e8e8e8', fontSize: '0.8rem',
+                      fontFamily: '"Rajdhani",sans-serif', outline: 'none', resize: 'vertical', boxSizing: 'border-box',
+                      '&:focus': { borderColor: '#9b30ff' },
+                    }}
+                  />
+                </Box>
+
+                <Box
+                  component="button"
+                  onClick={handleSubmitOrder}
+                  disabled={orderSubmitting}
+                  sx={{
+                    width: '100%', border: 'none', cursor: orderSubmitting ? 'not-allowed' : 'pointer',
+                    py: 1.4, borderRadius: 1, mb: 1,
+                    fontFamily: '"Orbitron",sans-serif', fontSize: '0.72rem', fontWeight: 700,
+                    letterSpacing: '1.5px', textTransform: 'uppercase', color: '#fff',
+                    background: orderSubmitting ? 'rgba(155,48,255,0.3)' : 'linear-gradient(135deg,#9b30ff,#6a0dad)',
+                    boxShadow: orderSubmitting ? 'none' : '0 0 24px rgba(155,48,255,0.4)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {orderSubmitting ? 'Илгээж байна...' : 'ЗАХИАЛГА ИЛГЭЭХ'}
+                </Box>
+
+                <Box
+                  component="button"
+                  onClick={() => setOrderDialog(false)}
+                  disabled={orderSubmitting}
+                  sx={{
+                    width: '100%', border: '1px solid rgba(155,48,255,0.2)', cursor: 'pointer',
+                    py: 1, borderRadius: 1, background: 'transparent',
+                    fontFamily: '"Orbitron",sans-serif', fontSize: '0.65rem', color: '#555',
+                    letterSpacing: '1px', '&:hover': { borderColor: '#9b30ff', color: '#ccc' },
+                  }}
+                >
+                  Хаах
+                </Box>
+              </>
             )}
-
-            <Box
-              component="button"
-              onClick={() => { setSendDialog(false); setSendStep(0); }}
-              sx={{
-                width: '100%', border: '1px solid rgba(155,48,255,0.2)', cursor: 'pointer',
-                py: 1, borderRadius: 1, background: 'transparent',
-                fontFamily: '"Orbitron",sans-serif', fontSize: '0.65rem', color: '#555',
-                letterSpacing: '1px', '&:hover': { borderColor: '#9b30ff', color: '#ccc' },
-              }}
-            >
-              Хаах
-            </Box>
           </Box>
         </Box>
       )}

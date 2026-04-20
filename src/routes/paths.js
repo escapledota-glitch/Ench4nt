@@ -130,6 +130,9 @@ export const paths = {
     mockup: {
       root: `${ROOTS.DASHBOARD}/mockup`,
     },
+    orders: {
+      root: `${ROOTS.DASHBOARD}/orders`,
+    },
     invoice: {
       root: `${ROOTS.DASHBOARD}/invoice`,
       new: `${ROOTS.DASHBOARD}/invoice/new`,
