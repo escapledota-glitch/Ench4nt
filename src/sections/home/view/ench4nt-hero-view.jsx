@@ -49,13 +49,16 @@ export function Ench4ntHeroView() {
   const [thunder2, setThunder2] = useState(false);
 
   useEffect(() => {
-    // First lightning flash at 300ms
-    const t1 = setTimeout(() => setThunder(true), 300);
-    const t2 = setTimeout(() => setThunder(false), 450);
-    // Second flash at 600ms
-    const t3 = setTimeout(() => setThunder2(true), 600);
-    const t4 = setTimeout(() => setThunder2(false), 700);
-    return () => [t1, t2, t3, t4].forEach(clearTimeout);
+    // flash 1 — strong
+    const t1 = setTimeout(() => setThunder(true), 400);
+    const t2 = setTimeout(() => setThunder(false), 480);
+    // flash 2 — quick afterglow
+    const t3 = setTimeout(() => setThunder(true), 540);
+    const t4 = setTimeout(() => setThunder(false), 590);
+    // flash 3 — faint tail
+    const t5 = setTimeout(() => setThunder2(true), 640);
+    const t6 = setTimeout(() => setThunder2(false), 680);
+    return () => [t1,t2,t3,t4,t5,t6].forEach(clearTimeout);
   }, []);
 
   useEffect(() => {
@@ -141,46 +144,20 @@ export function Ench4ntHeroView() {
         },
       }}
     >
-      {/* ── Thunder flash overlays ── */}
+      {/* ── Thunder — full-screen ambient flashes only, no SVG ── */}
       {thunder && (
         <Box sx={{
           position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none',
-          background: 'rgba(180,120,255,0.18)',
-          animation: 'thunderFlash 0.15s ease-out',
-          '@keyframes thunderFlash': {
-            '0%': { opacity: 1 }, '100%': { opacity: 0 },
-          },
+          background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.12) 0%, rgba(180,140,255,0.06) 60%, transparent 100%)',
+          opacity: 1, transition: 'opacity 0.08s ease-out',
         }} />
       )}
       {thunder2 && (
         <Box sx={{
           position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none',
-          background: 'rgba(220,180,255,0.28)',
-          animation: 'thunderFlash2 0.1s ease-out',
-          '@keyframes thunderFlash2': {
-            '0%': { opacity: 1 }, '100%': { opacity: 0 },
-          },
+          background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.05) 0%, transparent 70%)',
+          opacity: 1, transition: 'opacity 0.06s ease-out',
         }} />
-      )}
-
-      {/* ── Lightning bolt SVG ── */}
-      {(thunder || thunder2) && (
-        <Box sx={{
-          position: 'fixed', top: 0, left: '45%', zIndex: 9998, pointerEvents: 'none',
-          animation: 'boltDrop 0.4s ease-out forwards',
-          '@keyframes boltDrop': {
-            '0%': { opacity: 0, transform: 'translateY(-60px) scaleY(0.2)' },
-            '20%': { opacity: 1, transform: 'translateY(0) scaleY(1)' },
-            '80%': { opacity: 0.8 },
-            '100%': { opacity: 0, transform: 'translateY(20px)' },
-          },
-        }}>
-          <svg width="60" height="220" viewBox="0 0 60 220" fill="none">
-            <polyline points="38,0 18,100 32,100 12,220" stroke="rgba(200,150,255,0.95)" strokeWidth="3" strokeLinejoin="round"/>
-            <polyline points="38,0 18,100 32,100 12,220" stroke="white" strokeWidth="1" strokeLinejoin="round" opacity="0.6"/>
-            <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          </svg>
-        </Box>
       )}
 
       {/* ── City background image ── */}

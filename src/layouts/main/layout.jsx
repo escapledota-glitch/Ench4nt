@@ -8,13 +8,13 @@ import Alert from '@mui/material/Alert';
 import { usePathname } from 'src/routes/hooks';
 
 import { Logo } from 'src/components/logo';
+import { ParticlesBg } from 'src/components/particles-bg';
 
 import { NavMobile } from './nav/mobile';
 import { NavDesktop } from './nav/desktop';
 import { Footer, HomeFooter } from './footer';
 import { MenuButton } from '../components/menu-button';
 import { navData as mainNavData } from '../nav-config-main';
-import { ThemeToggleButton } from '../components/theme-toggle-button';
 import { MainSection, LayoutSection, HeaderSection } from '../core';
 
 // ----------------------------------------------------------------------
@@ -31,9 +31,9 @@ export function MainLayout({ sx, cssVars, children, slotProps, layoutQuery = 'md
   const renderHeader = () => {
     const headerSlots = {
       topArea: (
-        <Alert severity="info" sx={{ display: 'none', borderRadius: 0 }}>
-          This is an info Alert.
-        </Alert>
+        <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+          <ParticlesBg count={60} />
+        </Box>
       ),
       leftArea: (
         <>

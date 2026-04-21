@@ -9,6 +9,7 @@ import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
 import { Iconify } from 'src/components/iconify';
+import { ParticlesBg } from 'src/components/particles-bg';
 
 // ----------------------------------------------------------------------
 
@@ -83,7 +84,8 @@ const NavLink = styled(Link)(() => ({
 export function Footer({ sx, ...other }) {
   return (
     <FooterRoot sx={sx} {...other}>
-      <Container maxWidth="lg">
+      <ParticlesBg count={70} style={{ zIndex: 0 }} />
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
         {/* Top strip */}
         <Box
           sx={{
