@@ -74,12 +74,16 @@ const ItemRoot = styled(ButtonBase, { shouldForwardProp })(({ active, open, them
 
   const rootItemStyles = {
     color: '#c0c0c0',
+    transition: 'color 0.2s, text-shadow 0.2s',
     '&:hover': {
       color: '#fff',
-      textShadow: '0 0 10px #9b30ff',
+      textShadow: '0 0 8px #9b30ff, 0 0 20px rgba(155,48,255,0.6), 0 0 40px rgba(155,48,255,0.3)',
     },
     ...(open && { '&::before': { ...dotTransitions.out } }),
-    ...(active && { color: '#9b30ff' }),
+    ...(active && {
+      color: '#c880ff',
+      textShadow: '0 0 10px rgba(155,48,255,0.8), 0 0 24px rgba(155,48,255,0.4)',
+    }),
   };
 
   const subItemStyles = {
@@ -107,13 +111,14 @@ const ItemRoot = styled(ButtonBase, { shouldForwardProp })(({ active, open, them
 const ItemTitle = styled('span', { shouldForwardProp })(({ theme }) => ({
   ...navItemStyles.title(theme),
   ...theme.typography.body2,
-  fontWeight: 600,
+  fontWeight: 700,
   textTransform: 'uppercase',
-  letterSpacing: '1.5px',
-  fontSize: theme.typography.pxToRem(13),
+  letterSpacing: '2px',
+  fontSize: theme.typography.pxToRem(12),
+  fontFamily: '"Orbitron", sans-serif',
   variants: [
-    { props: { variant: 'subItem' }, style: { fontSize: theme.typography.pxToRem(12) } },
-    { props: { active: true }, style: { fontWeight: 700 } },
+    { props: { variant: 'subItem' }, style: { fontSize: theme.typography.pxToRem(11), fontFamily: 'inherit', letterSpacing: '1px' } },
+    { props: { active: true }, style: { fontWeight: 800 } },
   ],
 }));
 

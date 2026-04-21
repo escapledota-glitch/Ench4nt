@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -45,6 +45,18 @@ const scrollPulse = keyframes`
 
 export function Ench4ntHeroView() {
   const starsRef = useRef(null);
+  const [thunder, setThunder] = useState(false);
+  const [thunder2, setThunder2] = useState(false);
+
+  useEffect(() => {
+    // First lightning flash at 300ms
+    const t1 = setTimeout(() => setThunder(true), 300);
+    const t2 = setTimeout(() => setThunder(false), 450);
+    // Second flash at 600ms
+    const t3 = setTimeout(() => setThunder2(true), 600);
+    const t4 = setTimeout(() => setThunder2(false), 700);
+    return () => [t1, t2, t3, t4].forEach(clearTimeout);
+  }, []);
 
   useEffect(() => {
     const c = starsRef.current;
@@ -129,6 +141,48 @@ export function Ench4ntHeroView() {
         },
       }}
     >
+      {/* ── Thunder flash overlays ── */}
+      {thunder && (
+        <Box sx={{
+          position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none',
+          background: 'rgba(180,120,255,0.18)',
+          animation: 'thunderFlash 0.15s ease-out',
+          '@keyframes thunderFlash': {
+            '0%': { opacity: 1 }, '100%': { opacity: 0 },
+          },
+        }} />
+      )}
+      {thunder2 && (
+        <Box sx={{
+          position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none',
+          background: 'rgba(220,180,255,0.28)',
+          animation: 'thunderFlash2 0.1s ease-out',
+          '@keyframes thunderFlash2': {
+            '0%': { opacity: 1 }, '100%': { opacity: 0 },
+          },
+        }} />
+      )}
+
+      {/* ── Lightning bolt SVG ── */}
+      {(thunder || thunder2) && (
+        <Box sx={{
+          position: 'fixed', top: 0, left: '45%', zIndex: 9998, pointerEvents: 'none',
+          animation: 'boltDrop 0.4s ease-out forwards',
+          '@keyframes boltDrop': {
+            '0%': { opacity: 0, transform: 'translateY(-60px) scaleY(0.2)' },
+            '20%': { opacity: 1, transform: 'translateY(0) scaleY(1)' },
+            '80%': { opacity: 0.8 },
+            '100%': { opacity: 0, transform: 'translateY(20px)' },
+          },
+        }}>
+          <svg width="60" height="220" viewBox="0 0 60 220" fill="none">
+            <polyline points="38,0 18,100 32,100 12,220" stroke="rgba(200,150,255,0.95)" strokeWidth="3" strokeLinejoin="round"/>
+            <polyline points="38,0 18,100 32,100 12,220" stroke="white" strokeWidth="1" strokeLinejoin="round" opacity="0.6"/>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </svg>
+        </Box>
+      )}
+
       {/* ── City background image ── */}
       <Box
         sx={{
@@ -244,11 +298,17 @@ export function Ench4ntHeroView() {
 
         <Box sx={{
           fontFamily: '"Orbitron", sans-serif',
-          fontSize: '0.7rem',
+          fontSize: '0.72rem',
           letterSpacing: '5px',
-          color: '#9b30ff',
+          color: '#d0a0ff',
           textTransform: 'uppercase',
           mb: 2,
+          textShadow: '0 0 12px rgba(155,48,255,0.9), 0 0 30px rgba(155,48,255,0.5)',
+          animation: 'subtitlePulse 3s ease-in-out infinite',
+          '@keyframes subtitlePulse': {
+            '0%, 100%': { opacity: 0.9, textShadow: '0 0 12px rgba(155,48,255,0.9)' },
+            '50%': { opacity: 1, textShadow: '0 0 20px rgba(200,130,255,1), 0 0 50px rgba(155,48,255,0.6)' },
+          },
         }}>
           // Загварын ирээдүй //
         </Box>
@@ -262,7 +322,14 @@ export function Ench4ntHeroView() {
             lineHeight: 1,
             color: '#e8e8e8',
             m: 0, mb: 2,
-            animation: `${glitchTitle} 8s infinite`,
+            perspective: '600px',
+            transformStyle: 'preserve-3d',
+            animation: `logoSpin3d 12s ease-in-out infinite, ${glitchTitle} 8s infinite 3s`,
+            '@keyframes logoSpin3d': {
+              '0%':   { transform: 'rotateY(0deg)' },
+              '8%':   { transform: 'rotateY(360deg)' },
+              '100%': { transform: 'rotateY(360deg)' },
+            },
             '& span': { color: '#9b30ff' },
           }}
         >
