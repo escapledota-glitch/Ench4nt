@@ -868,7 +868,7 @@ export function CustomizerView({ initialImage }) {
         body: JSON.stringify({
           customer_name: orderForm.name,
           customer_phone: orderForm.phone,
-          garment_type: garment,
+          garment_type: type,
           color: colorId,
           size: orderForm.size,
           quantity: orderForm.quantity,
