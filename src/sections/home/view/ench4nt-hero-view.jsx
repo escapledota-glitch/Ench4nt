@@ -136,11 +136,11 @@ export function Ench4ntHeroView() {
           backgroundImage: 'url(https://res.cloudinary.com/dr09loi2q/image/upload/q_auto,f_auto/ench4nt/hero-bg.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center 40%',
-          transform: 'scale(1.04)',
-          animation: 'heroDrift 20s ease-in-out infinite alternate',
+          transform: 'scale(1.1)',
+          animation: 'heroDrift 8s ease-in-out infinite alternate',
           '@keyframes heroDrift': {
-            '0%':   { transform: 'scale(1.04) translateY(0px)' },
-            '100%': { transform: 'scale(1.08) translateY(-12px)' },
+            '0%':   { transform: 'scale(1.1) translateY(0px)' },
+            '100%': { transform: 'scale(1.28) translateY(-22px)' },
           },
         }}
       />
