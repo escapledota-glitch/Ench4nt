@@ -23,18 +23,20 @@ const NAV_LINKS = [
 
 const FooterRoot = styled('footer')(() => ({
   position: 'relative',
-  background: 'linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%)',
-  borderTop: '1px solid rgba(180,180,180,0.15)',
+  backgroundImage: 'url(https://res.cloudinary.com/dr09loi2q/image/upload/q_auto,f_auto/ench4nt/stars-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center bottom',
+  borderTop: '1px solid rgba(155,48,255,0.2)',
   overflow: 'hidden',
   '&::before': {
     content: '""',
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '1px',
-    background: 'linear-gradient(90deg, transparent, #c0c0c0, #e8e8e8, #c0c0c0, transparent)',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    pointerEvents: 'none',
+    zIndex: 0,
   },
+  '& > *': { position: 'relative', zIndex: 1 },
 }));
 
 const MetalText = styled(Typography)(() => ({

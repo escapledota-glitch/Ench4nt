@@ -79,12 +79,14 @@ export function MainLayout({ sx, cssVars, children, slotProps, layoutQuery = 'md
         slotProps={slotProps?.header?.slotProps}
         sx={[
           {
-            background: 'rgba(5,5,7,0.92)',
-            backdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(155,48,255,0.2)',
+            backgroundImage: 'url(https://res.cloudinary.com/dr09loi2q/image/upload/q_auto,f_auto/ench4nt/stars-bg.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backdropFilter: 'blur(2px)',
+            borderBottom: '1px solid rgba(155,48,255,0.25)',
             color: '#e8e8e8',
             '&::before': {
-              background: 'rgba(5,5,7,0.92) !important',
+              background: 'rgba(0,0,0,0.55) !important',
               opacity: '1 !important',
               visibility: 'visible !important',
             },

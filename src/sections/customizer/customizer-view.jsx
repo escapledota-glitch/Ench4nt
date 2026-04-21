@@ -1109,7 +1109,7 @@ export function CustomizerView({ initialImage }) {
 
   // ── RENDER ────────────────────────────────────────────────────────────────
   return (
-    <Box sx={{ minHeight: '100vh', background: isDark ? 'radial-gradient(ellipse at 50% 0%, #120a20 0%, #060609 50%)' : '#f0f0f4', color: isDark ? '#e0e0e0' : '#111', pt: { xs: '64px', md: '88px' }, pb: { xs: '80px', md: 8 }, transition: 'background 0.3s, color 0.3s' }}>
+    <Box sx={{ minHeight: '100vh', backgroundImage: 'url(https://res.cloudinary.com/dr09loi2q/image/upload/q_auto,f_auto/ench4nt/stars-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', color: '#e0e0e0', pt: { xs: '64px', md: '88px' }, pb: { xs: '80px', md: 8 } }}>
 
       {/* Page header */}
       <Box sx={{ px: { xs: 2, md: 5 }, mb: { xs: 1, md: 2 } }}>
