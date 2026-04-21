@@ -156,12 +156,15 @@ export function Footer({ sx, ...other }) {
             © {new Date().getFullYear()} ENCH4NT STUDIO — ALL RIGHTS RESERVED
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 3 }}>
+          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
             <NavLink href="#" sx={{ fontSize: '0.65rem' }}>
               НУУЦЛАЛЫН БОДЛОГО
             </NavLink>
             <NavLink href="#" sx={{ fontSize: '0.65rem' }}>
               ҮЙЛЧИЛГЭЭНИЙ НӨХЦӨЛ
+            </NavLink>
+            <NavLink component={RouterLink} href="/dashboard" sx={{ fontSize: '0.55rem', color: '#333', '&:hover': { color: '#666' } }}>
+              dashboard
             </NavLink>
           </Box>
         </Box>
