@@ -7,9 +7,9 @@ import Box from '@mui/material/Box';
 import { RouterLink } from 'src/routes/components';
 
 import { KinoVideo } from '../drama-video';
-import { useCatalog } from '../drama-catalog';
 import { InstallCard } from '../drama-extras';
 import { useDramaStore } from '../use-drama-store';
+import { useCatalog, useStreamUrl } from '../drama-catalog';
 import { C, FONT, Icon, Badge, Reveal, HScroll, RankCard, cardWidth, PosterCard, SectionTitle } from '../drama-ui';
 import { GENRES, freeLabel, topSeries, newSeries, seriesByGenre, featuredSeries, getEpisodeVideo } from '../drama-data';
 
@@ -125,6 +125,10 @@ function Hero({ items, saved, onSave }) {
   const s = items[index % items.length];
   const go = useCallback((d) => setIndex((i) => (i + d + items.length) % items.length), [items.length]);
 
+  // Трейлер: 1-р ангийн гарын үсэгтэй холбоос (эрхгүй бол зураг л харагдана)
+  const trailer = useStreamUrl(motionOk ? s.id : null, 1);
+  const trailerSrc = trailer.url || (trailer.mode === 'fallback' ? getEpisodeVideo(s, 1) : null);
+
   useEffect(() => {
     setVideoReady(false);
     if (paused) return undefined;
@@ -139,7 +143,7 @@ function Hero({ items, saved, onSave }) {
     v.muted = muted;
     v.play().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.id, motionOk]);
+  }, [s.id, motionOk, trailerSrc]);
 
   // Таб нуугдсан үед зогсооно
   useEffect(() => {
@@ -205,11 +209,14 @@ function Hero({ items, saved, onSave }) {
       ))}
 
       {/* Трейлер (1-р анги) — дуугүй, давталттай */}
-      {motionOk && (
+      {motionOk && trailerSrc && (
         <KinoVideo
           key={`v-${s.id}`}
           ref={videoRef}
-          src={getEpisodeVideo(s, 1)}
+          src={trailerSrc}
+          controlsList="nodownload"
+          disablePictureInPicture
+          onContextMenu={(e) => e.preventDefault()}
           muted={muted}
           autoPlay
           loop

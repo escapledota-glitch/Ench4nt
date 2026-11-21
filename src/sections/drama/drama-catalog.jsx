@@ -55,25 +55,48 @@ export function useCatalog() {
   return ctx;
 }
 
-// Нэг цувралын ангиудын видео холбоос (RLS: түгжээтэй анги багцгүй бол ирэхгүй)
-export function useEpisodeVideos(seriesId, refreshKey) {
-  const [videos, setVideos] = useState({});
+// ----------------------------------------------------------------------
+// Нэг ангийн видео холбоог серверээс авна (/api/kino/stream).
+// Сервер үзэх эрхийг шалгаад богино хугацаатай, гарын үсэгтэй холбоос өгнө.
+//
+// Буцаах: { loading, url, mode }  mode: 'full' | 'preview' | 'locked' | 'none' | 'fallback'
+//   'none'     — энэ ангид видео оруулаагүй
+//   'fallback' — сервер тохируулаагүй (жишээ өгөгдөлд л ажиллана)
+
+export function useStreamUrl(seriesId, ep, refreshKey) {
+  const [state, setState] = useState({ loading: true, url: null, mode: null });
 
   useEffect(() => {
-    if (!supabase || !seriesId) return undefined;
+    if (!seriesId || !ep) return undefined;
     let alive = true;
-    supabase
-      .from('episodes')
-      .select('ep, video_url')
-      .eq('series_id', seriesId)
-      .then(({ data }) => {
-        if (!alive || !data) return;
-        setVideos(Object.fromEntries(data.map((r) => [r.ep, r.video_url])));
-      });
+    setState({ loading: true, url: null, mode: null });
+
+    (async () => {
+      try {
+        const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+        const res = await fetch('/api/kino/stream', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ seriesId, ep }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!alive) return;
+        if (res.status === 403) setState({ loading: false, url: null, mode: 'locked' });
+        else if (res.status === 503 || res.status === 404) setState({ loading: false, url: null, mode: 'fallback' });
+        else if (!body.url) setState({ loading: false, url: null, mode: 'none' });
+        else setState({ loading: false, url: body.url, mode: body.mode });
+      } catch {
+        if (alive) setState({ loading: false, url: null, mode: 'fallback' });
+      }
+    })();
+
     return () => {
       alive = false;
     };
-  }, [seriesId, refreshKey]);
+  }, [seriesId, ep, refreshKey]);
 
-  return videos;
+  return state;
 }

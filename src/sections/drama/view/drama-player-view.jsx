@@ -11,7 +11,7 @@ import { useDramaAuth } from '../drama-auth';
 import { isHls, KinoVideo } from '../drama-video';
 import { useDramaStore } from '../use-drama-store';
 import { C, Icon , NotFoundState } from '../drama-ui';
-import { useCatalog, useEpisodeVideos } from '../drama-catalog';
+import { useCatalog, useStreamUrl } from '../drama-catalog';
 import { freeLabel, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
 
 // ----------------------------------------------------------------------
@@ -63,9 +63,12 @@ export function DramaPlayerView({ id, initialEp }) {
   useEffect(() => {
     setPreviewEnded(false);
   }, [ep, previewLimit]);
-  // Видео холбоосууд өгөгдлийн сангаас (багц авсны дараа дахин ачаална)
-  const videos = useEpisodeVideos(series?.id, isSubscribed);
-  const videoSrc = series ? getEpisodeVideo(series, ep, videos) : '';
+  // Серверээс гарын үсэгтэй, хугацаатай холбоос (багц авсны дараа дахин авна)
+  const stream = useStreamUrl(series?.id, ep, isSubscribed);
+  const videoSrc =
+    !series || stream.loading
+      ? ''
+      : stream.url || (stream.mode === 'fallback' || stream.mode === 'none' ? getEpisodeVideo(series, ep) : '');
   const seriesId = series?.id;
 
   const goTo = useCallback(
@@ -267,6 +270,7 @@ export function DramaPlayerView({ id, initialEp }) {
     <Box
       ref={rootRef}
       onMouseMove={showUi}
+      onContextMenu={(e) => e.preventDefault()}
       sx={{
         cursor: ui ? 'auto' : 'none',
         position: 'fixed',
@@ -327,6 +331,9 @@ export function DramaPlayerView({ id, initialEp }) {
               ref={videoRef}
               src={videoSrc}
               poster={series.poster}
+              controlsList="nodownload noremoteplayback"
+              disablePictureInPicture
+              disableRemotePlayback
               playsInline
               muted={muted}
               preload="auto"
@@ -361,6 +368,9 @@ export function DramaPlayerView({ id, initialEp }) {
             />
           )}
         </Box>
+
+        {/* Хөдөлгөөнт усан тэмдэг — дэлгэц бичлэг хийвэл хэн болохыг харуулна */}
+        {!locked && <Watermark text={user?.email || '444ulaanbaatar.com'} />}
 
         {/* Дээд, доод сүүдэр */}
         <Box sx={{ ...fade, pointerEvents: 'none', position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 18%, transparent 62%, rgba(0,0,0,0.8) 100%)' }} />
@@ -745,6 +755,48 @@ export function DramaPlayerView({ id, initialEp }) {
 }
 
 // ----------------------------------------------------------------------
+
+// Үзэгчийн имэйлийг бүдэг, 25 секунд тутам байрлал сольж харуулна
+const WM_SPOTS = [
+  { top: '18%', left: '8%' },
+  { top: '42%', left: '52%' },
+  { top: '68%', left: '12%' },
+  { top: '30%', left: '30%' },
+  { top: '78%', left: '48%' },
+  { top: '55%', left: '6%' },
+];
+
+function Watermark({ text }) {
+  const [spot, setSpot] = useState(() => Math.floor(Math.random() * WM_SPOTS.length));
+
+  useEffect(() => {
+    const t = setInterval(() => setSpot((s) => (s + 1 + Math.floor(Math.random() * 3)) % WM_SPOTS.length), 25000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        position: 'absolute',
+        ...WM_SPOTS[spot],
+        zIndex: 1,
+        pointerEvents: 'none',
+        userSelect: 'none',
+        fontSize: { xs: 11, md: 13 },
+        fontWeight: 600,
+        letterSpacing: 0.3,
+        color: 'rgba(255,255,255,0.22)',
+        textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+        transform: 'rotate(-12deg)',
+        transition: 'top 1.2s ease, left 1.2s ease',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {text} · 444 Кино
+    </Box>
+  );
+}
 
 // 75 → "1:15", 3725 → "1:02:05"
 function formatTime(sec) {

@@ -75,17 +75,9 @@ create table if not exists public.episodes (
 );
 alter table public.episodes enable row level security;
 
--- Үнэгүй анги — бүгдэд; бусад анги — зөвхөн багцтай хэрэглэгч, админд.
--- (Түгжээтэй ангийн видео холбоос багцгүй хүнд огт ирэхгүй.)
+-- Видео холбоосыг хөтөч шууд уншихгүй — зөвхөн сервер (/api/kino/stream) эрх шалгаад
+-- хугацаатай гарын үсэгтэй холбоос олгоно. (Админ доорх бодлогоор бүрэн эрхтэй.)
 drop policy if exists "read allowed episodes" on public.episodes;
-create policy "read allowed episodes" on public.episodes for select using (
-  public.is_admin()
-  or public.has_active_subscription()
-  or exists (
-    select 1 from public.series s
-    where s.id = series_id and (ep <= s.free_episodes or s.free_minutes > 0)
-  )
-);
 
 drop policy if exists "admin manages episodes" on public.episodes;
 create policy "admin manages episodes" on public.episodes
