@@ -10,6 +10,7 @@ import { RouterLink } from 'src/routes/components';
 import { useDramaAuth } from '../drama-auth';
 import { isHls, KinoVideo } from '../drama-video';
 import { useDramaStore } from '../use-drama-store';
+import { SubtitleOverlay } from '../drama-subtitles';
 import { C, Icon , NotFoundState } from '../drama-ui';
 import { useCatalog, useStreamUrl } from '../drama-catalog';
 import { freeLabel, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
@@ -304,6 +305,7 @@ export function DramaPlayerView({ id, initialEp }) {
         onTouchEnd={onTouchEnd}
         onWheel={onWheel}
         sx={{
+          containerType: 'inline-size', // хадмалын хэмжээ дэлгэцийн өргөнд пропорциональ
           position: 'relative',
           height: '100dvh',
           width: { xs: '100%', md: 'auto' },
@@ -371,6 +373,11 @@ export function DramaPlayerView({ id, initialEp }) {
 
         {/* Хөдөлгөөнт усан тэмдэг — дэлгэц бичлэг хийвэл хэн болохыг харуулна */}
         {!locked && <Watermark text={user?.email || '444ulaanbaatar.com'} />}
+
+        {/* Хадмал — байрлал, хэмжээг админ тохируулна */}
+        {!showPaywall && stream.subtitles?.length > 0 && (
+          <SubtitleOverlay videoRef={videoRef} url={stream.subtitles[0].url} style={stream.subtitleStyle} />
+        )}
 
         {/* Дээд, доод сүүдэр */}
         <Box sx={{ ...fade, pointerEvents: 'none', position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 18%, transparent 62%, rgba(0,0,0,0.8) 100%)' }} />

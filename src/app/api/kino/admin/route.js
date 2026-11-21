@@ -1,5 +1,13 @@
 import webpush from 'web-push';
 
+import {
+  SUB_LANGS,
+  subtitlePath,
+  subtitleStylePath,
+  readSubtitleStyle,
+  normalizeSubtitleStyle,
+} from 'src/lib/subtitles';
+
 import { db, must, HttpError, requireAdmin, errorResponse } from './_lib';
 
 // ----------------------------------------------------------------------
@@ -75,6 +83,46 @@ const ACTIONS = {
     if (rows.length) must(await d.from('episodes').upsert(rows));
     if (empty.length) must(await d.from('episodes').delete().eq('series_id', seriesId).in('ep', empty));
     return { saved: rows.length };
+  },
+
+  // ---------- Хадмал (зөвхөн админ тохируулна) ----------
+  // { [ep]: ['mn', 'en'] }
+  async listSubtitles({ seriesId }) {
+    const storage = db().storage.from('kino');
+    const { data: folders } = await storage.list(`subtitles/${seriesId}`, { limit: 1000 });
+    const out = {};
+    await Promise.all(
+      (folders ?? [])
+        .filter((f) => /^\d+$/.test(f.name))
+        .map(async (f) => {
+          const { data: files } = await storage.list(`subtitles/${seriesId}/${f.name}`, { limit: 50 });
+          const langs = (files ?? []).map((x) => x.name.replace(/\.vtt$/, '')).filter((l) => SUB_LANGS[l]);
+          if (langs.length) out[f.name] = langs;
+        })
+    );
+    return out;
+  },
+
+  async deleteSubtitle({ seriesId, ep, lang }) {
+    if (!SUB_LANGS[lang]) throw new HttpError(400, 'Хэл буруу');
+    const { error } = await db().storage.from('kino').remove([subtitlePath(seriesId, Number(ep), lang)]);
+    if (error) throw new HttpError(500, error.message);
+    return { ok: true };
+  },
+
+  getSubtitleStyle: async ({ seriesId }) => readSubtitleStyle(db(), seriesId),
+
+  async saveSubtitleStyle({ seriesId, style }) {
+    const clean = normalizeSubtitleStyle(style);
+    const { error } = await db()
+      .storage.from('kino')
+      .upload(subtitleStylePath(seriesId), Buffer.from(JSON.stringify(clean)), {
+        contentType: 'application/json',
+        cacheControl: '60',
+        upsert: true,
+      });
+    if (error) throw new HttpError(500, error.message);
+    return clean;
   },
 
   // ---------- Хэрэглэгч ----------

@@ -28,6 +28,7 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { GENRES, freeLabel } from 'src/sections/drama/drama-data';
 
+import { KinoSubtitlesCard } from './kino-subtitles-card';
 import { slugify, errorText, saveSeries, uploadImage, listEpisodes, saveEpisodes, getSeriesRow } from '../kino-api';
 
 // ----------------------------------------------------------------------
@@ -218,6 +219,8 @@ export function KinoSeriesEditView({ id }) {
       </Box>
 
       {!isNew && <EpisodesCard seriesId={id} total={Number(form.episodes) || 0} free={Number(form.free_episodes) || 0} />}
+
+      {!isNew && <KinoSubtitlesCard seriesId={id} total={Number(form.episodes) || 1} poster={form.poster} />}
     </DashboardContent>
   );
 }

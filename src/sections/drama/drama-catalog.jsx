@@ -87,7 +87,14 @@ export function useStreamUrl(seriesId, ep, refreshKey) {
         if (res.status === 403) setState({ loading: false, url: null, mode: 'locked' });
         else if (res.status === 503 || res.status === 404) setState({ loading: false, url: null, mode: 'fallback' });
         else if (!body.url) setState({ loading: false, url: null, mode: 'none' });
-        else setState({ loading: false, url: body.url, mode: body.mode });
+        else
+          setState({
+            loading: false,
+            url: body.url,
+            mode: body.mode,
+            subtitles: body.subtitles ?? [],
+            subtitleStyle: body.subtitleStyle ?? null,
+          });
       } catch {
         if (alive) setState({ loading: false, url: null, mode: 'fallback' });
       }

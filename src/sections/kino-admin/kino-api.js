@@ -56,6 +56,28 @@ export async function uploadImage(file, folder = 'posters') {
   return json.url;
 }
 
+// ---------- Хадмал ----------
+export const listSubtitles = (seriesId) => call('listSubtitles', { seriesId });
+export const deleteSubtitle = (seriesId, ep, lang) => call('deleteSubtitle', { seriesId, ep, lang });
+export const getSubtitleStyle = (seriesId) => call('getSubtitleStyle', { seriesId });
+export const saveSubtitleStyle = (seriesId, style) => call('saveSubtitleStyle', { seriesId, style });
+
+export async function uploadSubtitle(seriesId, ep, lang, file) {
+  const form = new FormData();
+  form.append('seriesId', seriesId);
+  form.append('ep', String(ep));
+  form.append('lang', lang);
+  form.append('file', file);
+  const res = await fetch('/api/kino/admin/subtitles', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token()}` },
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Хадмал хадгалж чадсангүй');
+  return json;
+}
+
 // ---------- Хэрэглэгч ----------
 export const listUsers = () => call('listUsers');
 export const grantPlan = (userId, plan) => call('grantPlan', { userId, plan });

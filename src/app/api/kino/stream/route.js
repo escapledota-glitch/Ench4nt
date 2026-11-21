@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 import { signBunnyUrl } from 'src/lib/bunny-sign';
+import { SUB_LANGS, subtitlePath, subtitleFolder, readSubtitleStyle } from 'src/lib/subtitles';
 
 // ----------------------------------------------------------------------
 // POST /api/kino/stream  { seriesId, ep }
@@ -24,6 +25,27 @@ function admin() {
   if (!url || !key) return null;
   if (!db) db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   return db;
+}
+
+// Энэ ангийн хадмалууд + админы тохируулсан харагдах байдал
+async function subtitlesFor(d, seriesId, ep) {
+  try {
+    const storage = d.storage.from('kino');
+    const { data: files } = await storage.list(subtitleFolder(seriesId, ep), { limit: 20 });
+    const subtitles = (files ?? [])
+      .map((f) => ({ lang: f.name.replace(/\.vtt$/, ''), v: f.updated_at }))
+      .filter((f) => SUB_LANGS[f.lang])
+      .sort((a, b) => (a.lang === 'mn' ? -1 : b.lang === 'mn' ? 1 : 0))
+      .map((f) => ({
+        lang: f.lang,
+        label: SUB_LANGS[f.lang],
+        url: `${storage.getPublicUrl(subtitlePath(seriesId, ep, f.lang)).data.publicUrl}?v=${encodeURIComponent(f.v || '')}`,
+      }));
+    if (!subtitles.length) return { subtitles: [] };
+    return { subtitles, subtitleStyle: await readSubtitleStyle(d, seriesId) };
+  } catch {
+    return { subtitles: [] };
+  }
 }
 
 const json = (body, status = 200) =>
@@ -74,12 +96,12 @@ export async function POST(request) {
 
   if (subscribed || freeEpisode) {
     const s = signBunnyUrl(row.video_url, FULL_TTL);
-    return json({ url: s.url, mode: 'full', expires: s.expires });
+    return json({ url: s.url, mode: 'full', expires: s.expires, ...(await subtitlesFor(d, seriesId, ep)) });
   }
 
   if (previewSeconds > 0) {
     const s = signBunnyUrl(row.video_url, previewSeconds + PREVIEW_EXTRA);
-    return json({ url: s.url, mode: 'preview', previewSeconds, expires: s.expires });
+    return json({ url: s.url, mode: 'preview', previewSeconds, expires: s.expires, ...(await subtitlesFor(d, seriesId, ep)) });
   }
 
   return json({ error: 'subscription required', mode: 'locked' }, 403);
