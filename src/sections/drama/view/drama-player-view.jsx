@@ -203,16 +203,27 @@ export function DramaPlayerView({ id, initialEp }) {
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
-    // iPhone нь вэб хуудсанд бүтэн дэлгэц зөвшөөрдөггүй; Apple-ийн өөрийн тоглуулагч руу
-    // шилжвэл манай хадмал, усан тэмдэг харагдахгүй. Тиймээс iPhone дээр манай
-    // тоглуулагч дотроо "бүрэн харах" горимд (товчнуудыг нууж) шилжинэ.
+    // iPhone нь вэб хуудсанд бүтэн дэлгэц зөвшөөрдөггүй.
     if (!rootRef.current?.requestFullscreen) {
-      setIsFs((v) => {
-        if (!v) {
+      const v = videoRef.current;
+      const installedApp =
+        window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      // Хөтөч дээр: Apple-ийн жинхэнэ бүтэн дэлгэц (хадмалыг <track>-аар дамжуулна)
+      if (!installedApp && v?.webkitEnterFullscreen) {
+        try {
+          v.webkitEnterFullscreen();
+        } catch {
+          // зөвшөөрөөгүй
+        }
+        return;
+      }
+      // Нүүр дэлгэцэнд суулгасан апп аль хэдийн бүтэн дэлгэцтэй — товчнуудыг нууна
+      setIsFs((on) => {
+        if (!on) {
           clearTimeout(hideTimer.current);
           setUiVisible(false);
         }
-        return !v;
+        return !on;
       });
       return;
     }
@@ -224,6 +235,53 @@ export function DramaPlayerView({ id, initialEp }) {
     }
     showUi();
   }, [showUi]);
+
+  // iPhone-ийн жинхэнэ бүтэн дэлгэц: хадмалын <track>-ыг зөвхөн тэр үед асаана
+  // (энгийн үед манай өөрийн хадмалын давхарга харагдана — давхардахгүй).
+  const subDelay = Number(stream.subtitleStyle?.delay) || 0;
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return undefined;
+
+    const setTracks = (mode) => {
+      Array.from(v.textTracks || []).forEach((t, i) => {
+        t.mode = i === 0 ? mode : 'disabled';
+      });
+    };
+
+    // Админы "эрт/хожуу" тохиргоог Apple-ийн хадмалд ч хэрэглэнэ
+    const shifted = new WeakSet();
+    const applyDelay = () => {
+      if (!subDelay) return;
+      Array.from(v.textTracks || []).forEach((t) => {
+        Array.from(t.cues || []).forEach((c) => {
+          if (shifted.has(c)) return;
+          c.startTime = Math.max(0, c.startTime + subDelay);
+          c.endTime = Math.max(0, c.endTime + subDelay);
+          shifted.add(c);
+        });
+      });
+    };
+
+    const onBegin = () => {
+      setTracks('showing');
+      setTimeout(applyDelay, 300);
+      setIsFs(true);
+    };
+    const onEnd = () => {
+      setTracks('disabled');
+      setIsFs(false);
+      showUi();
+    };
+
+    setTracks('disabled');
+    v.addEventListener('webkitbeginfullscreen', onBegin);
+    v.addEventListener('webkitendfullscreen', onEnd);
+    return () => {
+      v.removeEventListener('webkitbeginfullscreen', onBegin);
+      v.removeEventListener('webkitendfullscreen', onEnd);
+    };
+  }, [videoSrc, stream.subtitles, subDelay, showUi]);
 
   // Гарын товч
   useEffect(() => {
@@ -396,11 +454,12 @@ export function DramaPlayerView({ id, initialEp }) {
               onClick={onScreenTap}
               onTimeUpdate={(e) => {
                 const v = e.currentTarget;
-                // Үнэгүй хугацаа дуусвал зогсооно
+                // Үнэгүй хугацаа дуусвал зогсооно (iPhone-ий бүтэн дэлгэцээс гаргаж багц санал болгоно)
                 if (previewLimit && v.currentTime >= previewLimit) {
                   v.pause();
                   v.currentTime = previewLimit;
                   setPreviewEnded(true);
+                  if (v.webkitDisplayingFullscreen) v.webkitExitFullscreen?.();
                 }
                 setTime(v.currentTime);
                 if (v.duration) setProgress(v.currentTime / v.duration);
@@ -411,7 +470,14 @@ export function DramaPlayerView({ id, initialEp }) {
               }}
               onEnded={() => (isMovie ? setPaused(true) : goTo(ep + 1))}
               sx={{ width: 1, height: 1, objectFit: 'cover', display: 'block' }}
-            />
+              // Хадмалыг <track>-аар ч өгнө: iPhone-ийн бүтэн дэлгэцэнд (манай давхарга
+              // харагдахгүй үед) Apple өөрөө харуулна. Энгийн үед унтраалттай.
+              crossOrigin="anonymous"
+            >
+              {stream.subtitles?.map((s) => (
+                <track key={s.lang} kind="subtitles" src={s.url} srcLang={s.lang} label={s.label} />
+              ))}
+            </KinoVideo>
           )}
         </Box>
 
