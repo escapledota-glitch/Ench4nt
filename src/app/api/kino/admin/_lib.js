@@ -35,12 +35,13 @@ let adminDb = null;
 
 export function db() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SECRET_KEY;
+  // Хуучин Ench4nt төсөл SUPABASE_SERVICE_ROLE_KEY нэрээр Vercel-д хадгалсан байгаа
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url) throw new HttpError(500, 'Supabase URL тохируулаагүй байна.');
   if (!key) {
     throw new HttpError(
       500,
-      'SUPABASE_SECRET_KEY тохируулаагүй байна. Supabase → Project Settings → API Keys → Secret key-г .env.local-д оруулна уу.'
+      'Supabase-ийн нууц түлхүүр алга (SUPABASE_SERVICE_ROLE_KEY эсвэл SUPABASE_SECRET_KEY). Supabase → Project Settings → API Keys-ээс хуулж .env.local / Vercel-д оруулна уу.'
     );
   }
   if (!adminDb) {
