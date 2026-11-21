@@ -383,7 +383,7 @@ export function DramaPlayerView({ id, initialEp }) {
         </Box>
 
         {/* Хөдөлгөөнт усан тэмдэг — дэлгэц бичлэг хийвэл хэн болохыг харуулна */}
-        {!locked && <Watermark text={user?.email || '444ulaanbaatar.com'} />}
+        {!locked && <Watermark />}
 
         {/* Хадмал — байрлал, хэмжээг админ тохируулна */}
         {!showPaywall && stream.subtitles?.length > 0 && (
@@ -765,7 +765,7 @@ export function DramaPlayerView({ id, initialEp }) {
 
 // ----------------------------------------------------------------------
 
-// Үзэгчийн имэйлийг бүдэг, 25 секунд тутам байрлал сольж харуулна
+// "444 KINO" усан тэмдэг — бүдэг, 25 секунд тутам байрлал сольж харуулна
 const WM_SPOTS = [
   { top: '18%', left: '8%' },
   { top: '42%', left: '52%' },
@@ -775,7 +775,7 @@ const WM_SPOTS = [
   { top: '55%', left: '6%' },
 ];
 
-function Watermark({ text }) {
+function Watermark() {
   const [spot, setSpot] = useState(() => Math.floor(Math.random() * WM_SPOTS.length));
 
   useEffect(() => {
@@ -802,7 +802,7 @@ function Watermark({ text }) {
         whiteSpace: 'nowrap',
       }}
     >
-      {text} · 444 Кино
+      444 KINO
     </Box>
   );
 }

@@ -306,15 +306,45 @@ function FreeAccessCard({ form, set }) {
         <Typography variant="subtitle1">Үнэгүй үзэх тохиргоо</Typography>
       </Stack>
 
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-        <TextField
-          label="Бүтэн үнэгүй анги"
-          type="number"
-          value={form.free_episodes}
-          onChange={set('free_episodes')}
-          slotProps={{ htmlInput: { min: 0, max: total } }}
-          helperText={isMovie ? 'Кинонд 0 (эсвэл бүтэн үнэгүй бол 1)' : `Эхний хэдэн анги бүтэн үнэгүй (нийт ${total})`}
-        />
+      {/* Бүтэн үнэгүй анги — утсан дээр ч нэг товшилтоор (0 оруулахад амар) */}
+      <Box sx={{ mb: 2.5 }}>
+        <Typography variant="subtitle2">Бүтэн үнэгүй анги</Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+          {isMovie ? 'Кинонд: 0 = захиалгатай, 1 = бүтэн үнэгүй' : `Эхний хэдэн анги бүтэн үнэгүй (нийт ${total})`}
+        </Typography>
+        <Stack direction="row" sx={{ alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            disabled={eps <= 0}
+            onClick={() => set('free_episodes')(Math.max(0, eps - 1))}
+            sx={{ minWidth: 44, px: 0, fontSize: 20 }}
+          >
+            −
+          </Button>
+          <Box sx={{ minWidth: 48, textAlign: 'center', typography: 'h5' }}>{eps}</Box>
+          <Button
+            variant="outlined"
+            color="inherit"
+            disabled={eps >= total}
+            onClick={() => set('free_episodes')(Math.min(total, eps + 1))}
+            sx={{ minWidth: 44, px: 0, fontSize: 20 }}
+          >
+            +
+          </Button>
+          {[...new Set([0, 1, 3, 5, 10, total].filter((n) => n <= total))].map((n) => (
+            <Chip
+              key={n}
+              label={n === total && total > 1 ? `Бүгд (${n})` : n === 0 ? '0 — захиалгатай' : n === total ? `${n} — бүтэн үнэгүй` : n}
+              color={eps === n ? 'primary' : 'default'}
+              variant={eps === n ? 'filled' : 'outlined'}
+              onClick={() => set('free_episodes')(n)}
+            />
+          ))}
+        </Stack>
+      </Box>
+
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr' }}>
         <TextField
           label="Үнэгүй үзэх хугацаа"
           type="number"
