@@ -79,6 +79,7 @@
     "es-toolkit": "^1.39.10",
     "firebase": "^12.3.0",
     "framer-motion": "^12.23.22",
+    "hls.js": "^1.5.20",
     "i18next": "^25.5.2",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-resources-to-backend": "^1.2.1",
@@ -109,6 +110,7 @@
     "stylis": "^4.3.6",
     "swr": "^2.3.6",
     "turndown": "^7.2.1",
+    "web-push": "^3.6.7",
     "yet-another-react-lightbox": "^3.25.0",
     "zod": "^4.1.11"
   },

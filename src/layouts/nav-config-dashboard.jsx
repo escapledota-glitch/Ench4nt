@@ -33,6 +33,26 @@ const ICONS = {
 
 export const navData = [
   /**
+   * 444 Кино
+   */
+  {
+    subheader: '444 Кино',
+    items: [
+      { title: 'Кино самбар', path: '/dashboard/kino', icon: ICONS.analytics },
+      {
+        title: 'Цуврал',
+        path: '/dashboard/kino/series',
+        icon: <Iconify icon="solar:clapperboard-play-bold-duotone" />,
+        children: [
+          { title: 'Жагсаалт', path: '/dashboard/kino/series' },
+          { title: 'Шинэ нэмэх', path: '/dashboard/kino/series/new' },
+        ],
+      },
+      { title: 'Хэрэглэгчид', path: '/dashboard/kino/users', icon: ICONS.user },
+      { title: 'Мэдэгдэл', path: '/dashboard/kino/notifications', icon: <Iconify icon="solar:bell-bing-bold-duotone" /> },
+    ],
+  },
+  /**
    * Ерөнхий
    */
   {

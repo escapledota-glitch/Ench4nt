@@ -1,0 +1,22 @@
+{
+  "name": "444 Кино",
+  "short_name": "444 Кино",
+  "description": "Монгол богино цуврал, кино онлайн",
+  "lang": "mn",
+  "id": "/drama/",
+  "start_url": "/drama/?source=app",
+  "scope": "/drama/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0712",
+  "theme_color": "#0b0712",
+  "icons": [
+    { "src": "/kino/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/kino/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/kino/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Үргэлжлүүлэн үзэх", "url": "/drama/my/", "icons": [{ "src": "/kino/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Хайх", "url": "/drama/browse/", "icons": [{ "src": "/kino/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

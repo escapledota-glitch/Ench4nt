@@ -14,6 +14,12 @@ const isStaticExport = false;
 // ----------------------------------------------------------------------
 
 const nextConfig = {
+  // Утаснаас (ижил Wi-Fi) хөгжүүлэлтийн серверт хандахыг зөвшөөрнө
+  allowedDevOrigins: ['192.168.1.11', '192.168.1.*'],
+  // Үндсэн хаяг шууд 444 Кино руу
+  async redirects() {
+    return [{ source: '/', destination: '/drama/', permanent: false }];
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
