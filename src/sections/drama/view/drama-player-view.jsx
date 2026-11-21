@@ -65,11 +65,43 @@ export function DramaPlayerView({ id, initialEp }) {
     setPreviewEnded(false);
   }, [ep, previewLimit]);
   // Серверээс гарын үсэгтэй, хугацаатай холбоос (багц авсны дараа дахин авна)
-  const stream = useStreamUrl(series?.id, ep, isSubscribed);
-  const videoSrc =
+  // Гарын үсэгтэй холбоос дуусахаас 5 минутын өмнө шинээр авна (урт кино тасрахгүй)
+  const [renewNonce, setRenewNonce] = useState(0);
+  const stream = useStreamUrl(series?.id, ep, `${isSubscribed}-${renewNonce}`);
+  const signedExpires = stream.url?.includes('bcdn_token=') ? stream.expires || 0 : 0;
+
+  useEffect(() => {
+    if (!signedExpires) return undefined;
+    const ms = Math.max(30_000, (signedExpires - 300) * 1000 - Date.now());
+    const t = setTimeout(() => setRenewNonce((n) => n + 1), ms);
+    return () => clearTimeout(t);
+  }, [signedExpires]);
+
+  const freshSrc =
     !series || stream.loading
       ? ''
       : stream.url || (stream.mode === 'fallback' || stream.mode === 'none' ? getEpisodeVideo(series, ep) : '');
+
+  // Тоглож буй ангийн холбоосыг тогтвортой барина — дахин шалгахад видео эхнээс
+  // нь эхлэхгүй. Зөвхөн (1) өөр анги, (2) урьдчилан үзэхээс бүтэн эрх рүү шилжих,
+  // (3) хугацаа дуусах гэж байгаа үед солино — тэгэхдээ үзэж байсан секундээс үргэлжилнэ.
+  const [active, setActive] = useState({ key: '', src: '', mode: null, expires: 0 });
+  const resumeAt = useRef(0);
+  const activeKey = `${series?.id}:${ep}`;
+
+  useEffect(() => {
+    if (!freshSrc) return;
+    setActive((prev) => {
+      const sameEp = prev.key === activeKey && prev.src;
+      const upgraded = prev.mode === 'preview' && stream.mode === 'full';
+      const expiring = prev.expires && Date.now() / 1000 > prev.expires - 120;
+      if (sameEp && !upgraded && !expiring) return prev;
+      if (sameEp) resumeAt.current = videoRef.current?.currentTime || 0;
+      return { key: activeKey, src: freshSrc, mode: stream.mode, expires: signedExpires };
+    });
+  }, [activeKey, freshSrc, stream.mode, signedExpires]);
+
+  const videoSrc = active.key === activeKey ? active.src : '';
   const seriesId = series?.id;
 
   const goTo = useCallback(
@@ -171,15 +203,22 @@ export function DramaPlayerView({ id, initialEp }) {
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
+    // iPhone нь вэб хуудсанд бүтэн дэлгэц зөвшөөрдөггүй; Apple-ийн өөрийн тоглуулагч руу
+    // шилжвэл манай хадмал, усан тэмдэг харагдахгүй. Тиймээс iPhone дээр манай
+    // тоглуулагч дотроо "бүрэн харах" горимд (товчнуудыг нууж) шилжинэ.
+    if (!rootRef.current?.requestFullscreen) {
+      setIsFs((v) => {
+        if (!v) {
+          clearTimeout(hideTimer.current);
+          setUiVisible(false);
+        }
+        return !v;
+      });
+      return;
+    }
     try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else if (rootRef.current?.requestFullscreen) {
-        await rootRef.current.requestFullscreen({ navigationUI: 'hide' });
-      } else if (videoRef.current?.webkitEnterFullscreen) {
-        // iPhone: зөвхөн видеог бүтэн дэлгэцээр харуулна
-        videoRef.current.webkitEnterFullscreen();
-      }
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await rootRef.current.requestFullscreen({ navigationUI: 'hide' });
     } catch {
       // хөтөч зөвшөөрөөгүй
     }
@@ -345,6 +384,11 @@ export function DramaPlayerView({ id, initialEp }) {
               onLoadedMetadata={(e) => {
                 e.currentTarget.playbackRate = prefs.speed;
                 setDuration(e.currentTarget.duration || 0);
+                // Холбоос солигдсон бол үзэж байсан газраасаа үргэлжлүүлнэ
+                if (resumeAt.current > 0) {
+                  e.currentTarget.currentTime = resumeAt.current;
+                  resumeAt.current = 0;
+                }
               }}
               onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
               onPlay={() => setPaused(false)}

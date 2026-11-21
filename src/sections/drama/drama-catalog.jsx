@@ -64,12 +64,15 @@ export function useCatalog() {
 //   'fallback' — сервер тохируулаагүй (жишээ өгөгдөлд л ажиллана)
 
 export function useStreamUrl(seriesId, ep, refreshKey) {
-  const [state, setState] = useState({ loading: true, url: null, mode: null });
+  const [state, setState] = useState({ loading: true, url: null, mode: null, key: null });
+  const key = `${seriesId}:${ep}`;
 
   useEffect(() => {
     if (!seriesId || !ep) return undefined;
     let alive = true;
-    setState({ loading: true, url: null, mode: null });
+    // Өөр анги бол цэвэрлэнэ. Ижил ангийг дахин шалгаж байгаа бол одоогийн
+    // видео, хадмалыг хэвээр үлдээнэ (тасрахгүй).
+    setState((prev) => (prev.key === key && prev.url ? prev : { loading: true, url: null, mode: null, key }));
 
     (async () => {
       try {
@@ -84,25 +87,32 @@ export function useStreamUrl(seriesId, ep, refreshKey) {
         });
         const body = await res.json().catch(() => ({}));
         if (!alive) return;
-        if (res.status === 403) setState({ loading: false, url: null, mode: 'locked' });
-        else if (res.status === 503 || res.status === 404) setState({ loading: false, url: null, mode: 'fallback' });
-        else if (!body.url) setState({ loading: false, url: null, mode: 'none' });
+        // Сервер түр алдаа өгвөл (5xx) одоо тоглож буйг тасалдуулахгүй
+        if (res.status >= 500 && res.status !== 503) {
+          setState((prev) => (prev.key === key && prev.url ? { ...prev, loading: false } : { loading: false, url: null, mode: 'fallback', key }));
+        } else if (res.status === 403) setState({ loading: false, url: null, mode: 'locked', key });
+        else if (res.status === 503 || res.status === 404) setState({ loading: false, url: null, mode: 'fallback', key });
+        else if (!body.url) setState({ loading: false, url: null, mode: 'none', key });
         else
           setState({
             loading: false,
             url: body.url,
             mode: body.mode,
+            expires: body.expires,
             subtitles: body.subtitles ?? [],
             subtitleStyle: body.subtitleStyle ?? null,
+            key,
           });
       } catch {
-        if (alive) setState({ loading: false, url: null, mode: 'fallback' });
+        // Сүлжээ түр тасарвал одоогийн видео, хадмалыг хэвээр үлдээнэ
+        if (alive) setState((prev) => (prev.key === key && prev.url ? { ...prev, loading: false } : { loading: false, url: null, mode: 'fallback', key }));
       }
     })();
 
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seriesId, ep, refreshKey]);
 
   return state;

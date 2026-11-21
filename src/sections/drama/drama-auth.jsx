@@ -49,8 +49,11 @@ export function DramaAuthProvider({ children }) {
       setSubscription(null);
       return;
     }
-    const { data } = await supabase.from('subscriptions').select('*').eq('user_id', u.id).maybeSingle();
-    setSubscription(data ?? null);
+    const { data, error } = await supabase.from('subscriptions').select('*').eq('user_id', u.id).maybeSingle();
+    // Сүлжээний түр алдаа гарвал одоогийн багцыг хэвээр үлдээнэ
+    // (үгүй бол үзэж байх үед багц "алга" болж видео/хадмал дахин ачаалагдана)
+    if (error) return;
+    setSubscription((prev) => (JSON.stringify(prev) === JSON.stringify(data ?? null) ? prev : (data ?? null)));
   }, []);
 
   useEffect(() => {
@@ -63,9 +66,10 @@ export function DramaAuthProvider({ children }) {
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
-      setUser(u);
+      // Цаг тутмын токен шинэчлэлт (TOKEN_REFRESHED) — ижил хэрэглэгч бол юу ч өөрчлөхгүй
+      setUser((prev) => (event !== 'USER_UPDATED' && prev && u && prev.id === u.id ? prev : u));
       // Supabase-ийн callback дотор шууд await хийхгүй
       setTimeout(() => loadSubscription(u), 0);
     });
