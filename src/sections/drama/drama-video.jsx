@@ -47,7 +47,16 @@ export const KinoVideo = forwardRef(function KinoVideo({ src, quality = -1, onLe
         video.dispatchEvent(new Event('kino-ready'));
         return;
       }
-      const hls = new Hls({ capLevelToPlayerSize: false, startLevel: -1, abrEwmaDefaultEstimate: 3_000_000 });
+      // Хурдан эхлүүлэх: эхний хэсгийг дунд чанараар (≈480–720p) татаж шууд тоглуулаад,
+      // хэдхэн секундэд интернэтийн хурдаар 1080p хүртэл өсгөнө.
+      const hls = new Hls({
+        capLevelToPlayerSize: false,
+        startLevel: -1,
+        abrEwmaDefaultEstimate: 1_200_000,
+        startFragPrefetch: true,
+        testBandwidth: false,
+        maxBufferLength: 30,
+      });
       hlsRef.current = hls;
       hls.loadSource(src);
       hls.attachMedia(video);

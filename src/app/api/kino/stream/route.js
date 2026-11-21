@@ -27,11 +27,14 @@ function admin() {
   return db;
 }
 
-// Энэ ангийн хадмалууд + админы тохируулсан харагдах байдал
+// Энэ ангийн хадмалууд + админы тохируулсан харагдах байдал (хоёуланг зэрэг уншина)
 async function subtitlesFor(d, seriesId, ep) {
   try {
     const storage = d.storage.from('kino');
-    const { data: files } = await storage.list(subtitleFolder(seriesId, ep), { limit: 20 });
+    const [{ data: files }, style] = await Promise.all([
+      storage.list(subtitleFolder(seriesId, ep), { limit: 20 }),
+      readSubtitleStyle(d, seriesId),
+    ]);
     const subtitles = (files ?? [])
       .map((f) => ({ lang: f.name.replace(/\.vtt$/, ''), v: f.updated_at }))
       .filter((f) => SUB_LANGS[f.lang])
@@ -42,9 +45,25 @@ async function subtitlesFor(d, seriesId, ep) {
         url: `${storage.getPublicUrl(subtitlePath(seriesId, ep, f.lang)).data.publicUrl}?v=${encodeURIComponent(f.v || '')}`,
       }));
     if (!subtitles.length) return { subtitles: [] };
-    return { subtitles, subtitleStyle: await readSubtitleStyle(d, seriesId) };
+    return { subtitles, subtitleStyle: style };
   } catch {
     return { subtitles: [] };
+  }
+}
+
+// Хэрэглэгч багцтай эсэх — хэрэглэгчийн өөрийн токеноор нэг удаагийн хүсэлт
+// (RLS "read own subscription" нь зөвхөн өөрийнх нь мөрийг өгнө; токеныг Supabase шалгана)
+async function isSubscribed(token) {
+  if (!token) return false;
+  try {
+    const userDb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data } = await userDb.from('subscriptions').select('status, expires_at').maybeSingle();
+    return !!data && data.status === 'active' && new Date(data.expires_at) > new Date();
+  } catch {
+    return false;
   }
 }
 
@@ -65,43 +84,37 @@ export async function POST(request) {
   ep = Number(ep);
   if (!seriesId || !Number.isInteger(ep) || ep < 1) return json({ error: 'bad request' }, 400);
 
-  const { data: series } = await d
-    .from('series')
-    .select('id, published, episodes, free_episodes, free_minutes')
-    .eq('id', seriesId)
-    .maybeSingle();
-  if (!series || !series.published || ep > series.episodes) return json({ error: 'not found' }, 404);
-
-  const { data: row } = await d.from('episodes').select('video_url').eq('series_id', seriesId).eq('ep', ep).maybeSingle();
-  if (!row?.video_url) return json({ url: null }); // видео оруулаагүй анги
-
-  // Хэрэглэгч багцтай эсэх
-  let subscribed = false;
   const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
-  if (token) {
-    const { data: userData } = await d.auth.getUser(token);
-    const uid = userData?.user?.id;
-    if (uid) {
-      const { data: sub } = await d
-        .from('subscriptions')
-        .select('status, expires_at')
-        .eq('user_id', uid)
-        .maybeSingle();
-      subscribed = !!sub && sub.status === 'active' && new Date(sub.expires_at) > new Date();
-    }
-  }
+
+  // Бүх шалгалтыг ЗЭРЭГ хийнэ (дараалан хийвэл сервер ↔ өгөгдлийн сан хооронд
+  // олон удаа явж, видео эхлэх нь хэдэн секундээр удааширдаг байсан)
+  const [epRes, subs, subscribed] = await Promise.all([
+    d
+      .from('episodes')
+      .select('video_url, series!inner(published, episodes, free_episodes, free_minutes)')
+      .eq('series_id', seriesId)
+      .eq('ep', ep)
+      .maybeSingle(),
+    subtitlesFor(d, seriesId, ep),
+    isSubscribed(token),
+  ]);
+
+  const row = epRes.data;
+  const series = row?.series;
+  if (!row?.video_url || !series) return json({ url: null }); // видео оруулаагүй анги
+  if (!series.published || ep > series.episodes) return json({ error: 'not found' }, 404);
 
   const freeEpisode = ep <= series.free_episodes;
   const previewSeconds = Math.max(0, series.free_minutes || 0) * 60;
 
   if (subscribed || freeEpisode) {
     const s = signBunnyUrl(row.video_url, FULL_TTL);
-    return json({ url: s.url, mode: 'full', expires: s.expires, ...(await subtitlesFor(d, seriesId, ep)) });
+    return json({ url: s.url, mode: 'full', expires: s.expires, ...subs });
   }
 
   if (previewSeconds > 0) {
     const s = signBunnyUrl(row.video_url, previewSeconds + PREVIEW_EXTRA);
-    return json({ url: s.url, mode: 'preview', previewSeconds, expires: s.expires, ...(await subtitlesFor(d, seriesId, ep)) });
+    return json({ url: s.url, mode: 'preview', previewSeconds, expires: s.expires, ...subs });
   }
 
   return json({ error: 'subscription required', mode: 'locked' }, 403);

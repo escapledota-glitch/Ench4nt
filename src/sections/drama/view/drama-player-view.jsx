@@ -66,7 +66,13 @@ export function DramaPlayerView({ id, initialEp }) {
   // Серверээс гарын үсэгтэй, хугацаатай холбоос (багц авсны дараа дахин авна)
   // Гарын үсэгтэй холбоос дуусахаас 5 минутын өмнө шинээр авна (урт кино тасрахгүй)
   const [renewNonce, setRenewNonce] = useState(0);
-  const stream = useStreamUrl(series?.id, ep, `${isSubscribed}-${renewNonce}`);
+  // Хуудасны хаягаас (id) шууд — цувралын жагсаалт ачаалагдахыг хүлээхгүй, зэрэг эхэлнэ
+  const stream = useStreamUrl(id, ep, `${isSubscribed}-${renewNonce}`);
+
+  // Видео тоглуулагчийн санг (hls.js) урьдчилан ачаална — холбоос ирмэгц шууд эхэлнэ
+  useEffect(() => {
+    import('hls.js').catch(() => {});
+  }, []);
   const signedExpires = stream.url?.includes('bcdn_token=') ? stream.expires || 0 : 0;
 
   useEffect(() => {
