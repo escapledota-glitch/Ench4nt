@@ -10,9 +10,9 @@ import { RouterLink } from 'src/routes/components';
 import { useDramaAuth } from '../drama-auth';
 import { isHls, KinoVideo } from '../drama-video';
 import { useDramaStore } from '../use-drama-store';
-import { SubtitleOverlay } from '../drama-subtitles';
 import { C, Icon , NotFoundState } from '../drama-ui';
 import { useCatalog, useStreamUrl } from '../drama-catalog';
+import { usePictureBox, SubtitleOverlay } from '../drama-subtitles';
 import { freeLabel, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
 
 // ----------------------------------------------------------------------
@@ -47,6 +47,12 @@ export function DramaPlayerView({ id, initialEp }) {
   const [uiVisible, setUiVisible] = useState(true);
   const rootRef = useRef(null);
   const hideTimer = useRef(null);
+  const frameRef = useRef(null);
+  const [videoAspect, setVideoAspect] = useState(9 / 16);
+  // Видеоны зураг дэлгэц дээр хаана байгааг тооцож хадмалыг түүнд наана
+  const pictureBox = usePictureBox(frameRef, videoAspect);
+  const [isFs, setIsFs] = useState(false);
+  const [fsTip, setFsTip] = useState(false);
 
   const total = series?.episodes ?? 1;
   const isMovie = total === 1;
@@ -200,6 +206,60 @@ export function DramaPlayerView({ id, initialEp }) {
     [showUi, previewLimit]
   );
 
+  // ---------- Бүтэн дэлгэц ----------
+  // Android, компьютер: манай тоглуулагч бүхэлдээ бүтэн дэлгэцэнд (хадмал яг ижил).
+  // iPhone Safari: вэб хуудсанд бүтэн дэлгэц зөвшөөрдөггүй тул тоглуулагч дотроо
+  // "бүрэн харах" горим (товчнууд нуугдана, хадмал яг ижил). Нүүр дэлгэцэнд суулгасан
+  // апп-д 100% бүтэн дэлгэц болно — анх удаа зааварчилгаа харуулна.
+  useEffect(() => {
+    const onChange = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!fsTip) return undefined;
+    const t = setTimeout(() => setFsTip(false), 8000);
+    return () => clearTimeout(t);
+  }, [fsTip]);
+
+  const toggleFullscreen = useCallback(async () => {
+    const el = rootRef.current;
+    if (el?.requestFullscreen && document.fullscreenEnabled !== false) {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else {
+          await el.requestFullscreen({ navigationUI: 'hide' });
+          clearTimeout(hideTimer.current);
+          setUiVisible(false);
+        }
+      } catch {
+        // хөтөч зөвшөөрөөгүй
+      }
+      return;
+    }
+    // iPhone
+    const installedApp =
+      window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    setIsFs((on) => {
+      if (!on) {
+        clearTimeout(hideTimer.current);
+        setUiVisible(false);
+        if (!installedApp) {
+          let seen = false;
+          try {
+            seen = !!window.localStorage.getItem('kino444-fs-tip');
+            window.localStorage.setItem('kino444-fs-tip', '1');
+          } catch {
+            // ignore
+          }
+          if (!seen) setFsTip(true);
+        }
+      }
+      return !on;
+    });
+  }, []);
+
   // Гарын товч
   useEffect(() => {
     const onKey = (e) => {
@@ -216,6 +276,8 @@ export function DramaPlayerView({ id, initialEp }) {
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         seek(-10);
+      } else if (e.key === 'f') {
+        toggleFullscreen();
       } else if (e.key === ' ' || e.key === 'k') {
         e.preventDefault();
         togglePlay();
@@ -223,7 +285,7 @@ export function DramaPlayerView({ id, initialEp }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [ep, goTo, togglePlay, listOpen, settingsOpen, seek]);
+  }, [ep, goTo, togglePlay, listOpen, settingsOpen, seek, toggleFullscreen]);
 
   // Хуудас гүйлгэхийг түгжих
   useEffect(() => {
@@ -313,11 +375,11 @@ export function DramaPlayerView({ id, initialEp }) {
       />
 
       <Box
+        ref={frameRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onWheel={onWheel}
         sx={{
-          containerType: 'inline-size', // хадмалын хэмжээ дэлгэцийн өргөнд пропорциональ
           position: 'relative',
           height: '100dvh',
           width: { xs: '100%', md: 'auto' },
@@ -357,6 +419,8 @@ export function DramaPlayerView({ id, initialEp }) {
               onLoadedMetadata={(e) => {
                 e.currentTarget.playbackRate = prefs.speed;
                 setDuration(e.currentTarget.duration || 0);
+                const { videoWidth: vw, videoHeight: vh } = e.currentTarget;
+                if (vw && vh) setVideoAspect(vw / vh);
                 // Холбоос солигдсон бол үзэж байсан газраасаа үргэлжлүүлнэ
                 if (resumeAt.current > 0) {
                   e.currentTarget.currentTime = resumeAt.current;
@@ -393,7 +457,7 @@ export function DramaPlayerView({ id, initialEp }) {
 
         {/* Хадмал — байрлал, хэмжээг админ тохируулна */}
         {!showPaywall && stream.subtitles?.length > 0 && (
-          <SubtitleOverlay videoRef={videoRef} url={stream.subtitles[0].url} style={stream.subtitleStyle} />
+          <SubtitleOverlay videoRef={videoRef} url={stream.subtitles[0].url} style={stream.subtitleStyle} box={pictureBox} />
         )}
 
         {/* Дээд, доод сүүдэр */}
@@ -612,7 +676,7 @@ export function DramaPlayerView({ id, initialEp }) {
         </Box>
 
         {/* Том дэлгэц дээрх өмнөх/дараах */}
-        <Box sx={{ ...fade, display: { xs: 'none', md: isMovie ? 'none' : 'flex' }, position: 'absolute', right: -64, top: '50%', transform: 'translateY(-50%)', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ ...fade, display: { xs: 'none', md: isMovie || isFs ? 'none' : 'flex' }, position: 'absolute', right: -64, top: '50%', transform: 'translateY(-50%)', flexDirection: 'column', gap: 1.5 }}>
           <NavArrow up disabled={ep <= 1} onClick={() => goTo(ep - 1)} />
           <NavArrow disabled={ep >= total} onClick={() => goTo(ep + 1)} />
         </Box>
@@ -685,10 +749,19 @@ export function DramaPlayerView({ id, initialEp }) {
             }}
           />
 
-          {/* Хугацаа */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.25, mb: 0.5 }}>
+          {/* Хугацаа ба бүтэн дэлгэц */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: -0.25 }}>
             <Box sx={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums', opacity: 0.9 }}>
               {formatTime(time)} <Box component="span" sx={{ opacity: 0.6 }}>/ {duration ? formatTime(duration) : '--:--'}</Box>
+            </Box>
+            <Box
+              component="button"
+              onClick={toggleFullscreen}
+              aria-label={isFs ? 'Бүтэн дэлгэцээс гарах' : 'Бүтэн дэлгэц'}
+              title={isFs ? 'Бүтэн дэлгэцээс гарах (F)' : 'Бүтэн дэлгэц (F)'}
+              sx={{ width: 40, height: 40, mr: -1, border: 0, bgcolor: 'transparent', color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+            >
+              <Icon name={isFs ? 'fullscreenExit' : 'fullscreen'} size={24} />
             </Box>
           </Box>
 
@@ -722,6 +795,37 @@ export function DramaPlayerView({ id, initialEp }) {
             </Box>
           </Box>
         </Box>
+
+        {/* iPhone Safari: 100% бүтэн дэлгэцээр үзэх зөвлөмж (нэг удаа) */}
+        {fsTip && (
+          <Box
+            role="status"
+            onClick={() => setFsTip(false)}
+            sx={{
+              position: 'absolute',
+              left: 16,
+              right: 16,
+              top: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+              zIndex: 3,
+              p: 1.75,
+              borderRadius: 3,
+              bgcolor: 'rgba(18,13,27,0.94)',
+              backdropFilter: 'blur(12px)',
+              border: `1px solid ${C.line}`,
+              fontSize: 13,
+              lineHeight: 1.55,
+              display: 'flex',
+              gap: 1.25,
+              alignItems: 'flex-start',
+            }}
+          >
+            <Box component="img" src="/kino/icon-192.png" alt="" sx={{ width: 36, height: 36, borderRadius: 1.5, flexShrink: 0 }} />
+            <Box>
+              <b>100% бүтэн дэлгэцээр үзэх үү?</b> Safari-ийн доод хэсэгт <b>Хуваалцах</b> (□↑) →{' '}
+              <b>Add to Home Screen</b> дарж 444 Кино-г суулгаарай. Апп-аас үзэхэд дэлгэц бүхэлдээ кино болно.
+            </Box>
+          </Box>
+        )}
 
         {toast && (
           <Box

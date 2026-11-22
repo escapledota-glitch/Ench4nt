@@ -58,8 +58,10 @@ export function useCues(url) {
   return cues;
 }
 
-// Зөвхөн харагдах байдал (тоглуулагч болон админы урьдчилан харахад)
-export function SubtitleText({ text, style }) {
+// Зөвхөн харагдах байдал (тоглуулагч болон админы урьдчилан харахад).
+// pictureWidth өгвөл үсгийн хэмжээг видеоны зурагны өргөнөөр тооцно (px) —
+// жижиг горим, бүтэн дэлгэц, ямар ч утсан дээр зурагтай харьцуулахад ижил харагдана.
+export function SubtitleText({ text, style, pictureWidth }) {
   const s = { ...DEFAULT_SUB_STYLE, ...style };
   if (!text) return null;
 
@@ -88,7 +90,7 @@ export function SubtitleText({ text, style }) {
         sx={{
           color: s.color,
           fontWeight: s.bold ? 800 : 500,
-          fontSize: `${(s.size / 3.9).toFixed(2)}cqw`,
+          fontSize: pictureWidth ? `${((s.size * pictureWidth) / 390).toFixed(2)}px` : `${(s.size / 3.9).toFixed(2)}cqw`,
           lineHeight: 1.35,
           whiteSpace: 'pre-line',
           ...bgSx,
@@ -100,8 +102,10 @@ export function SubtitleText({ text, style }) {
   );
 }
 
-// Тоглуулагч дээр — видеоны цагийг дагана
-export function SubtitleOverlay({ videoRef, url, style }) {
+// Тоглуулагч дээр — видеоны цагийг дагана.
+// box: видеоны зураг дэлгэц дээр яг хаана байгаа ({ left, top, width, height } px) —
+// хадмалыг зурагт наана. Дэлгэцээс илүү гарсан хэсэгт (тайрагдсан) текст гарахгүй.
+export function SubtitleOverlay({ videoRef, url, style, box }) {
   const cues = useCues(url);
   const [text, setText] = useState('');
   const delay = Number(style?.delay) || 0;
@@ -126,5 +130,49 @@ export function SubtitleOverlay({ videoRef, url, style }) {
     return () => cancelAnimationFrame(raf);
   }, [cues, delay, videoRef]);
 
-  return <SubtitleText text={text} style={style} />;
+  if (!box) return <SubtitleText text={text} style={style} />;
+
+  // Хэвтээ байрлал: дэлгэц дээр харагдаж буй хэсэгт (зураг хажуугаараа тайрагдсан бол)
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        top: box.top,
+        height: box.height,
+        left: Math.max(0, box.left),
+        width: Math.min(box.width, box.visibleWidth ?? box.width),
+        pointerEvents: 'none',
+        zIndex: 1,
+      }}
+    >
+      <SubtitleText text={text} style={style} pictureWidth={box.width} />
+    </Box>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Видеоны зураг (object-fit: cover) дэлгэц дээр хаана, ямар хэмжээтэй байгааг тооцно
+export function usePictureBox(frameRef, aspect) {
+  const [box, setBox] = useState(null);
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const measure = () => {
+      const fw = el.clientWidth;
+      const fh = el.clientHeight;
+      if (!fw || !fh) return;
+      const ar = aspect || 9 / 16;
+      // cover: зураг дэлгэцийг бүрэн дүүргэнэ, илүү хэсэг нь тайрагдана
+      const w = fw / fh > ar ? fw : fh * ar;
+      const h = w / ar;
+      setBox({ width: w, height: h, left: (fw - w) / 2, top: (fh - h) / 2, visibleWidth: fw });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [frameRef, aspect]);
+
+  return box;
 }
