@@ -7,6 +7,8 @@ import Box from '@mui/material/Box';
 
 import { RouterLink } from 'src/routes/components';
 
+import { KinoLogo } from 'src/components/kino-logo';
+
 import { DramaSync } from './drama-sync';
 import { C, FONT, Icon } from './drama-ui';
 import { CatalogProvider } from './drama-catalog';
@@ -77,25 +79,10 @@ function Logo() {
     <Box
       component={RouterLink}
       href="/drama"
-      sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none', color: C.text }}
+      aria-label="444 KINO — нүүр"
+      sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
     >
-      <Box
-        sx={{
-          px: 0.9,
-          height: 30,
-          borderRadius: 1.5,
-          background: C.grad,
-          display: 'grid',
-          placeItems: 'center',
-          fontWeight: 900,
-          fontSize: 15,
-          letterSpacing: 0.5,
-          boxShadow: '0 0 18px rgba(168,85,247,0.55)',
-        }}
-      >
-        444
-      </Box>
-      <Box sx={{ fontWeight: 900, fontSize: 19, letterSpacing: 0.3 }}>Кино</Box>
+      <KinoLogo height={30} />
     </Box>
   );
 }

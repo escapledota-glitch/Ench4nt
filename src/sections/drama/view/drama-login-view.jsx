@@ -7,6 +7,8 @@ import Box from '@mui/material/Box';
 
 import { RouterLink } from 'src/routes/components';
 
+import { KinoLogo } from 'src/components/kino-logo';
+
 import { C, Icon } from '../drama-ui';
 import { useDramaAuth, translateError } from '../drama-auth';
 
@@ -87,21 +89,7 @@ export function DramaLoginView() {
         }}
       >
         <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Box
-            sx={{
-              display: 'inline-grid',
-              placeItems: 'center',
-              px: 1.2,
-              height: 44,
-              borderRadius: 2,
-              background: C.grad,
-              fontWeight: 900,
-              fontSize: 22,
-              mb: 1.5,
-            }}
-          >
-            444
-          </Box>
+          <KinoLogo height={40} sx={{ mb: 2 }} />
           <Box component="h1" sx={{ m: 0, fontSize: 22, fontWeight: 800 }}>
             {mode === 'login' ? 'Тавтай морил' : 'Бүртгэл үүсгэх'}
           </Box>

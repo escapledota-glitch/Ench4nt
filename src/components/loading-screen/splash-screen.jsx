@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState, Fragment } from 'react';
+import { useRef, useState, Fragment, useEffect } from 'react';
 
 import Portal from '@mui/material/Portal';
 import { styled, keyframes } from '@mui/material/styles';
+
+import { KinoMark } from 'src/components/kino-logo';
 
 // ----------------------------------------------------------------------
 
@@ -109,7 +111,7 @@ export function SplashScreen({ portal = true, slots, slotProps, sx, ...other }) 
     setTimeout(() => setPhase(1), t + 200);
   }, []);
 
-  const loadingTexts = ['СИСТЕМИЙГ АЧААЛЖ БАЙНА', 'ЗАГВАРУУДЫГ БЭЛДЭЖ БАЙНА', 'БЭЛЭН БОЛЛОО'];
+  const loadingTexts = ['КИНО АЧААЛЖ БАЙНА', 'ЦУВРАЛУУДЫГ БЭЛДЭЖ БАЙНА', 'БЭЛЭН БОЛЛОО'];
   const textIndex = progress < 50 ? 0 : progress < 95 ? 1 : 2;
 
   return (
@@ -155,8 +157,9 @@ export function SplashScreen({ portal = true, slots, slotProps, sx, ...other }) 
 
           {/* Square face */}
           <LogoSquare>
+            <KinoMark size={64} />
             <LogoText>
-              ENCH<span>4</span>NT
+              444 <span>KINO</span>
             </LogoText>
             <CityText>ULAANBAATAR</CityText>
           </LogoSquare>
@@ -240,14 +243,15 @@ const LogoSquare = styled('div')({
 
 const LogoText = styled('div')({
   fontFamily: '"Orbitron", sans-serif',
-  fontSize: '2rem',
+  fontSize: '1.7rem',
   fontWeight: 900,
-  color: '#e8e8e8',
-  letterSpacing: 2,
+  color: '#f4f0fa',
+  letterSpacing: 1,
+  marginTop: 6,
   animation: `${glitch} 5s infinite`,
   '& span': {
-    color: '#9b30ff',
-    textShadow: '0 0 20px #9b30ff, 0 0 40px rgba(155,48,255,0.6)',
+    color: '#ec4899',
+    textShadow: '0 0 20px #a855f7, 0 0 40px rgba(236,72,153,0.6)',
   },
 });
 
