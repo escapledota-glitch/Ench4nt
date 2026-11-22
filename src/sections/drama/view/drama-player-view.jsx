@@ -50,7 +50,7 @@ export function DramaPlayerView({ id, initialEp }) {
   const frameRef = useRef(null);
   const [videoAspect, setVideoAspect] = useState(9 / 16);
   // Видеоны зураг дэлгэц дээр хаана байгааг тооцож хадмалыг түүнд наана
-  const pictureBox = usePictureBox(frameRef, videoAspect);
+  const pictureBox = usePictureBox(frameRef, videoAspect, !!series);
   const [isFs, setIsFs] = useState(false);
   const [fsTip, setFsTip] = useState(false);
 

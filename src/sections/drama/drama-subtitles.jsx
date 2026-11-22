@@ -152,12 +152,13 @@ export function SubtitleOverlay({ videoRef, url, style, box }) {
 
 // ----------------------------------------------------------------------
 // Видеоны зураг (object-fit: cover) дэлгэц дээр хаана, ямар хэмжээтэй байгааг тооцно
-export function usePictureBox(frameRef, aspect) {
+// ready: тоглуулагч дэлгэц дээр гарсан эсэх (гарсан даруйд хэмжинэ)
+export function usePictureBox(frameRef, aspect, ready = true) {
   const [box, setBox] = useState(null);
 
   useEffect(() => {
     const el = frameRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    if (!ready || !el || typeof ResizeObserver === 'undefined') return undefined;
     const measure = () => {
       const fw = el.clientWidth;
       const fh = el.clientHeight;
@@ -172,7 +173,7 @@ export function usePictureBox(frameRef, aspect) {
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [frameRef, aspect]);
+  }, [frameRef, aspect, ready]);
 
   return box;
 }
