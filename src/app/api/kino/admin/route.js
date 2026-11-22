@@ -8,6 +8,8 @@ import {
   normalizeSubtitleStyle,
 } from 'src/lib/subtitles';
 
+import { MONTHLY_VALUE as MONTHLY } from 'src/sections/drama/drama-data';
+
 import { db, must, HttpError, requireAdmin, errorResponse } from './_lib';
 
 // ----------------------------------------------------------------------
@@ -19,7 +21,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const PLAN_DAYS = { week: 7, month: 30, year: 365 };
-const MONTHLY = { week: (3900 * 30) / 7, month: 9900, year: 79000 / 12 };
 
 const ACTIONS = {
   // ---------- Ерөнхий ----------

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import Box from '@mui/material/Box';
@@ -26,12 +26,19 @@ export function DramaPlansView() {
 
   const choose = (plan) => {
     if (!user) {
-      const back = `/drama/plans${next ? `?next=${encodeURIComponent(next)}` : ''}`;
-      router.push(`/drama/login?mode=register&next=${encodeURIComponent(back)}`);
+      const q = new URLSearchParams({ plan: plan.id, ...(next ? { next } : {}) });
+      router.push(`/drama/login?mode=register&next=${encodeURIComponent(`/drama/plans?${q}`)}`);
       return;
     }
     setPicked(plan);
   };
+
+  // Хямдралын цонхноос (?plan=week) ирвэл тэр багцын төлбөрийг шууд нээнэ
+  const wanted = params.get('plan');
+  useEffect(() => {
+    const plan = PLANS.find((x) => x.id === wanted);
+    if (plan && user) setPicked(plan);
+  }, [wanted, user]);
 
   return (
     <Box sx={{ maxWidth: 1080, mx: 'auto', px: { xs: 2, md: 3 }, pt: { xs: 3, md: 6 }, pb: 6 }}>
@@ -133,12 +140,24 @@ export function DramaPlansView() {
               </Box>
             )}
             <Box sx={{ flex: 1 }}>
-              <Box sx={{ fontSize: 15, fontWeight: 700 }}>{p.name}</Box>
-              <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-                <Box sx={{ fontSize: { xs: 24, md: 34 }, fontWeight: 900 }}>{formatPrice(p.price)}</Box>
+              <Box sx={{ fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                {p.name}
+                {p.was && (
+                  <Box component="span" sx={{ px: 0.8, py: 0.2, borderRadius: 1, fontSize: 11, fontWeight: 800, bgcolor: '#ef4444', color: '#fff' }}>
+                    −{Math.round((1 - p.price / p.was) * 100)}%
+                  </Box>
+                )}
+              </Box>
+              <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'baseline', gap: 0.75, flexWrap: 'wrap' }}>
+                {p.was && (
+                  <Box component="s" sx={{ fontSize: { xs: 15, md: 18 }, color: C.muted, fontWeight: 600 }}>
+                    {formatPrice(p.was)}
+                  </Box>
+                )}
+                <Box sx={{ fontSize: { xs: 24, md: 34 }, fontWeight: 900, color: p.was ? C.gold : 'inherit' }}>{formatPrice(p.price)}</Box>
                 <Box sx={{ fontSize: 13, color: C.muted }}>/ {p.period}</Box>
               </Box>
-              <Box sx={{ mt: 0.3, fontSize: 13, color: p.popular ? C.accent2 : C.muted }}>{p.note}</Box>
+              <Box sx={{ mt: 0.3, fontSize: 13, color: p.popular ? C.accent2 : p.was ? '#fca5a5' : C.muted }}>{p.note}</Box>
               <Box component="ul" sx={{ display: { xs: 'none', md: 'grid' }, gap: 1, listStyle: 'none', p: 0, m: 0, mt: 2.5 }}>
                 {PLAN_BENEFITS.map((b) => (
                   <Box component="li" key={b} sx={{ display: 'flex', gap: 1, fontSize: 14, color: 'rgba(244,240,250,0.85)' }}>

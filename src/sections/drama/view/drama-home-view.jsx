@@ -7,6 +7,7 @@ import Box from '@mui/material/Box';
 import { RouterLink } from 'src/routes/components';
 
 import { KinoVideo } from '../drama-video';
+import { PromoPopup } from '../drama-promo';
 import { InstallCard } from '../drama-extras';
 import { useDramaStore } from '../use-drama-store';
 import { useCatalog, useStreamUrl } from '../drama-catalog';
@@ -56,6 +57,9 @@ export function DramaHomeView() {
         </Row>
 
         <InstallCard compact />
+
+        {/* Дундуур нь гүйлгэхэд гарах хямдралын цонх */}
+        <PromoPopup />
 
         {genres.length > 0 && (
           <Row>

@@ -15,14 +15,11 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import { PLANS, formatPrice } from 'src/sections/drama/drama-data';
-
-import { getStats, errorText } from '../kino-api';
+// MONTHLY = сарын орлогын ойролцоо тооцоо (идэвхтэй багцаас)
+import { PLANS, formatPrice, MONTHLY_VALUE as MONTHLY } from 'src/sections/drama/drama-data';
 
 // ----------------------------------------------------------------------
-
-// Сарын орлогын ойролцоо тооцоо (идэвхтэй багцаас)
-const MONTHLY = { week: (3900 * 30) / 7, month: 9900, year: 79000 / 12 };
+import { getStats, errorText } from '../kino-api';
 
 function StatCard({ title, value, sub, icon, color = 'primary' }) {
   return (

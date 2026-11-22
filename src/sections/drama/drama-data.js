@@ -13,12 +13,20 @@ export const FREE_EPISODES = 10;
 // Кино тус бүрийн үндсэн үнэ (₮). Админд кино бүрээр өөрчилнө; 0 = тусдаа зарахгүй
 export const DEFAULT_PRICE = 5900;
 
-// Захиалгын багцууд. id нь supabase/schema.sql доторх нэртэй таарах ёстой.
+// Багцууд. id нь supabase/schema.sql доторх нэртэй таарах ёстой.
+// was = хямдралаас өмнөх үнэ (зурж харуулна)
 export const PLANS = [
-  { id: 'week', name: '7 хоног', price: 3900, period: '7 хоног', note: 'Туршиж үзэхэд' },
-  { id: 'month', name: '1 сар', price: 9900, period: 'сар', note: 'Хамгийн их сонгодог', popular: true },
-  { id: 'year', name: '1 жил', price: 79000, period: 'жил', note: '33% хэмнэлт' },
+  { id: 'week', name: '7 хоног', price: 6900, was: 13000, period: '7 хоног', note: 'Хямдрал' },
+  { id: 'month', name: '1 сар', price: 25900, period: 'сар', note: 'Бүх цуврал хязгааргүй', popular: true },
+  { id: 'year', name: '1 жил', price: 79000, period: 'жил', note: 'Жилээр хамгийн хямд' },
 ];
+
+// Админы "сарын орлого" тооцоонд: багц бүрийн 1 сард ногдох үнэ
+export const MONTHLY_VALUE = {
+  week: (6900 * 30) / 7,
+  month: 25900,
+  year: 79000 / 12,
+};
 
 export const PLAN_BENEFITS = [
   'Бүх цувралын бүх анги',
