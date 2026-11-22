@@ -1,5 +1,6 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -58,7 +59,8 @@ export function PromoPopup() {
 
   const off = week.was ? Math.round((1 - week.price / week.was) * 100) : 0;
 
-  return (
+  // body руу шууд гаргана — доод цэс болон бусад давхаргын дээр харагдана
+  return createPortal(
     <Box
       role="dialog"
       aria-modal="true"
@@ -67,7 +69,7 @@ export function PromoPopup() {
       sx={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1300,
+        zIndex: 1500,
         bgcolor: 'rgba(0,0,0,0.6)',
         backdropFilter: 'blur(4px)',
         display: 'flex',
@@ -200,6 +202,7 @@ export function PromoPopup() {
           </Box>
         </Box>
       </Box>
-    </Box>
+    </Box>,
+    document.body
   );
 }
