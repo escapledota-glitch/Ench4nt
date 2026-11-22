@@ -84,7 +84,17 @@ export function KinoSubtitlesCard({ seriesId, total, poster }) {
     <Card sx={{ p: 3, mt: 3 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 0.5 }}>
         <Iconify icon="solar:subtitles-bold-duotone" width={24} sx={{ color: 'primary.main' }} />
-        <Typography variant="h6">Хадмал</Typography>
+        <Typography variant="h6" sx={{ flex: 1 }}>
+          Хадмал
+        </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          href={`/drama/${seriesId}/1/?edit=1`}
+          startIcon={<Iconify icon="solar:monitor-smartphone-bold" />}
+        >
+          Дэлгэц дээр тааруулах
+        </Button>
       </Stack>
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
         Анги бүрт .srt эсвэл .vtt файл оруулна. Байрлал, хэмжээг та тохируулна — үзэгчид өөрчлөх боломжгүй.
@@ -270,7 +280,7 @@ function Section({ title, icon, children, action }) {
 const BG_PRESETS = ['#000000', '#1d1529', '#0b2a4a', '#ffffff'];
 const MASK_PRESETS = ['#000000', '#120d1b', '#1f2937', '#ffffff'];
 
-function StyleControls({ style, onChange }) {
+export function StyleControls({ style, onChange }) {
   const set = (k) => (_e, v) => onChange({ ...style, [k]: v });
   const mask = style.mask || DEFAULT_SUB_MASK;
   const setMask = (k) => (_e, v) => onChange({ ...style, mask: { ...mask, [k]: v } });
@@ -347,17 +357,26 @@ function StyleControls({ style, onChange }) {
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Хэзээ харуулах
               </Typography>
-              <ToggleButtonGroup size="small" exclusive value={mask.timing} onChange={(_e, v) => v && onChange({ ...style, mask: { ...mask, timing: v } })}>
-                <ToggleButton value="always">Үргэлж</ToggleButton>
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={mask.mode === 'smart' ? 'subs' : mask.timing}
+                onChange={(_e, v) => v && onChange({ ...style, mask: { ...mask, timing: v } })}
+              >
+                <ToggleButton value="always" disabled={mask.mode === 'smart'}>
+                  Үргэлж
+                </ToggleButton>
                 <ToggleButton value="subs">Манай хадмал гарах үед л</ToggleButton>
               </ToggleButtonGroup>
-              {mask.timing === 'subs' && (
+              {(mask.timing === 'subs' || mask.mode === 'smart') && (
                 <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'text.secondary' }}>
-                  Хуучин хадмал манай хадмалтай бараг ижил мөчид гардаг тул тэр үед л нууна. Хадмал файл оруулаагүй ангид үргэлж харагдана.
+                  {mask.mode === 'smart'
+                    ? '"Зөвхөн бичиг" горим зөвхөн манай хадмал гарах үед ажиллана — бусад үед киноны цагаан зүйлд хүрэхгүй.'
+                    : 'Хуучин хадмал манай хадмалтай бараг ижил мөчид гардаг тул тэр үед л нууна. Хадмал файл оруулаагүй ангид үргэлж харагдана.'}
                 </Typography>
               )}
             </Box>
-            {mask.timing === 'subs' && (
+            {(mask.timing === 'subs' || mask.mode === 'smart') && (
               <Row label="Хугацааны нөөц (өмнө/хойно)" value={`±${mask.pad} сек`}>
                 <Slider value={mask.pad} min={0} max={3} step={0.1} onChange={setMask('pad')} />
               </Row>
@@ -392,6 +411,10 @@ function StyleControls({ style, onChange }) {
                     <ToggleButton value="bright">Ямар ч тод өнгө</ToggleButton>
                   </ToggleButtonGroup>
                 </Box>
+                <FormControlLabel
+                  control={<Switch checked={mask.outline !== false} onChange={(e) => onChange({ ...style, mask: { ...mask, outline: e.target.checked } })} />}
+                  label="Зөвхөн хар хүрээтэй бичиг (цагаан хувцас, гэрэлд хүрэхгүй)"
+                />
                 <Row label="Мэдрэмж (хэр тод бол бичиг гэж үзэх)" value={mask.threshold >= 230 ? 'Зөвхөн цэвэр цагаан' : mask.threshold <= 160 ? 'Саарал ч орно' : 'Дунд'}>
                   <Slider value={mask.threshold} min={120} max={255} onChange={setMask('threshold')} />
                 </Row>

@@ -1,11 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 
 import { RouterLink } from 'src/routes/components';
+
+import { normalizeSubtitleStyle } from 'src/lib/subtitles';
 
 import { BuyButton } from '../drama-buy';
 import { useDramaAuth } from '../drama-auth';
@@ -14,6 +17,9 @@ import { useDramaStore } from '../use-drama-store';
 import { C, Icon , NotFoundState } from '../drama-ui';
 import { useCatalog, useStreamUrl } from '../drama-catalog';
 import { usePictureBox, SubtitleLayers } from '../drama-subtitles';
+
+// Админы "дэлгэц дээр тааруулах" самбар — зөвхөн админд ачаалагдана
+const KinoEditPanel = dynamic(() => import('src/sections/kino-admin/kino-edit-panel'), { ssr: false });
 import { freeLabel, isForSale, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
 
 // ----------------------------------------------------------------------
@@ -28,7 +34,28 @@ export function DramaPlayerView({ id, initialEp }) {
   const { saved, toggleSaved, recordWatch } = useDramaStore();
   const { user, canWatch, loading: authLoading } = useDramaAuth();
   // Үзэх эрх: багцтай ЭСВЭЛ энэ киног худалдаж авсан
-  const isSubscribed = series ? canWatch(series.id) : false;
+  // ---------- Админ: дэлгэц дээр тааруулах (?edit=1) ----------
+  const [editToken, setEditToken] = useState(null);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('edit') !== '1') return;
+    let t = null;
+    try {
+      t = window.sessionStorage.getItem('jwt_access_token');
+    } catch {
+      // ignore
+    }
+    if (!t) return;
+    fetch('/api/kino/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+      body: JSON.stringify({ action: 'ping' }),
+    })
+      .then((r) => r.ok && setEditToken(t))
+      .catch(() => {});
+  }, []);
+  const editing = !!editToken;
+
+  const isSubscribed = editing || (series ? canWatch(series.id) : false);
 
   const videoRef = useRef(null);
   const touch = useRef(null);
@@ -76,7 +103,15 @@ export function DramaPlayerView({ id, initialEp }) {
   // Гарын үсэгтэй холбоос дуусахаас 5 минутын өмнө шинээр авна (урт кино тасрахгүй)
   const [renewNonce, setRenewNonce] = useState(0);
   // Хуудасны хаягаас (id) шууд — цувралын жагсаалт ачаалагдахыг хүлээхгүй, зэрэг эхэлнэ
-  const stream = useStreamUrl(id, ep, `${isSubscribed}-${renewNonce}`);
+  const stream = useStreamUrl(id, ep, `${isSubscribed}-${renewNonce}-${editing}`, editToken);
+
+  // Засварлаж буй (хадгалаагүй) тохиргоо — дэлгэц дээр шууд харагдана
+  const [draft, setDraft] = useState(null);
+  const [dragTarget, setDragTarget] = useState('sub');
+  useEffect(() => {
+    if (editing && !draft && !stream.loading) setDraft(normalizeSubtitleStyle(stream.subtitleStyle || {}));
+  }, [editing, draft, stream.loading, stream.subtitleStyle]);
+  const activeStyle = editing && draft ? draft : stream.subtitleStyle;
 
   // Видео тоглуулагчийн санг (hls.js) урьдчилан ачаална — холбоос ирмэгц шууд эхэлнэ
   useEffect(() => {
@@ -365,7 +400,7 @@ export function DramaPlayerView({ id, initialEp }) {
   const isSaved = saved.includes(series.id);
 
   // Товчнууд харагдах эсэх (зогссон, түгжээтэй үед үргэлж харагдана)
-  const ui = uiVisible || paused || locked;
+  const ui = editing ? false : uiVisible || paused || locked;
   const fade = { transition: 'opacity 350ms ease', opacity: ui ? 1 : 0, pointerEvents: ui ? 'auto' : 'none' };
 
   return (
@@ -489,8 +524,35 @@ export function DramaPlayerView({ id, initialEp }) {
           <SubtitleLayers
             videoRef={videoRef}
             url={stream.subtitles?.[0]?.url || null}
-            style={stream.subtitleStyle}
+            style={activeStyle}
             box={pictureBox}
+          />
+        )}
+
+        {/* Админ: дэлгэц дээр дарж чирээд хадмал / туузыг байрлуулна */}
+        {editing && draft && pictureBox && dragTarget !== 'none' && (
+          <Box
+            onPointerDown={(e) => {
+              const frame = frameRef.current;
+              if (!frame) return;
+              e.preventDefault();
+              const place = (ev) => {
+                const r = frame.getBoundingClientRect();
+                const visLeft = Math.max(0, pictureBox.left);
+                const visWidth = Math.min(pictureBox.width, pictureBox.visibleWidth ?? pictureBox.width);
+                const x = Math.round(Math.min(100, Math.max(0, ((ev.clientX - r.left - visLeft) / visWidth) * 100)));
+                const y = Math.round(Math.min(100, Math.max(0, ((ev.clientY - r.top - pictureBox.top) / pictureBox.height) * 100)));
+                setDraft((d) => (dragTarget === 'mask' ? { ...d, mask: { ...d.mask, y } } : { ...d, x, y }));
+              };
+              const up = () => {
+                window.removeEventListener('pointermove', place);
+                window.removeEventListener('pointerup', up);
+              };
+              window.addEventListener('pointermove', place);
+              window.addEventListener('pointerup', up);
+              place(e);
+            }}
+            sx={{ position: 'absolute', inset: 0, zIndex: 3, cursor: 'crosshair', touchAction: 'none' }}
           />
         )}
 
@@ -835,6 +897,23 @@ export function DramaPlayerView({ id, initialEp }) {
             </Box>
           </Box>
         </Box>
+
+        {editing && draft && (
+          <KinoEditPanel
+            seriesId={series.id}
+            style={draft}
+            onChange={setDraft}
+            dragTarget={dragTarget}
+            onDragTarget={setDragTarget}
+            videoRef={videoRef}
+            time={time}
+            duration={duration}
+            paused={paused}
+            onExit={() => {
+              window.location.href = `/dashboard/kino/series/${series.id}/`;
+            }}
+          />
+        )}
 
         {/* iPhone Safari: 100% бүтэн дэлгэцээр үзэх зөвлөмж (нэг удаа) */}
         {fsTip && (

@@ -63,7 +63,7 @@ export function useCatalog() {
 //   'none'     — энэ ангид видео оруулаагүй
 //   'fallback' — сервер тохируулаагүй (жишээ өгөгдөлд л ажиллана)
 
-export function useStreamUrl(seriesId, ep, refreshKey) {
+export function useStreamUrl(seriesId, ep, refreshKey, adminToken) {
   const [state, setState] = useState({ loading: true, url: null, mode: null, key: null });
   const key = `${seriesId}:${ep}`;
 
@@ -82,6 +82,7 @@ export function useStreamUrl(seriesId, ep, refreshKey) {
           headers: {
             'Content-Type': 'application/json',
             ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+            ...(adminToken ? { "x-admin-token": adminToken } : {}),
           },
           body: JSON.stringify({ seriesId, ep }),
         });
@@ -113,7 +114,7 @@ export function useStreamUrl(seriesId, ep, refreshKey) {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seriesId, ep, refreshKey]);
+  }, [seriesId, ep, refreshKey, adminToken]);
 
   return state;
 }

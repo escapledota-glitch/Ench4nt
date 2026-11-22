@@ -1,3 +1,4 @@
+import { jwtVerify } from 'jose';
 import { createClient } from '@supabase/supabase-js';
 
 import { signBunnyUrl } from 'src/lib/bunny-sign';
@@ -74,6 +75,18 @@ async function viewerAccess(token, seriesId) {
   }
 }
 
+// Админы токен (dashboard нэвтрэлт) — "дэлгэц дээр тааруулах" горимд бүтэн үзэх эрх
+async function isAdminToken(token) {
+  const secret = process.env.JWT_SECRET;
+  if (!token || !secret) return false;
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+    return payload.sub === 'ench4nt-admin';
+  } catch {
+    return false;
+  }
+}
+
 const json = (body, status = 200) =>
   Response.json(body, { status, headers: { 'Cache-Control': 'no-store, private' } });
 
@@ -95,7 +108,7 @@ export async function POST(request) {
 
   // Бүх шалгалтыг ЗЭРЭГ хийнэ (дараалан хийвэл сервер ↔ өгөгдлийн сан хооронд
   // олон удаа явж, видео эхлэх нь хэдэн секундээр удааширдаг байсан)
-  const [epRes, subs, access] = await Promise.all([
+  const [epRes, subs, access, isAdmin] = await Promise.all([
     d
       .from('episodes')
       .select('video_url, series!inner(published, episodes, free_episodes, free_minutes)')
@@ -104,6 +117,7 @@ export async function POST(request) {
       .maybeSingle(),
     subtitlesFor(d, seriesId, ep),
     viewerAccess(token, seriesId),
+    isAdminToken(request.headers.get('x-admin-token')),
   ]);
 
   const row = epRes.data;
@@ -114,7 +128,7 @@ export async function POST(request) {
   const freeEpisode = ep <= series.free_episodes;
   const previewSeconds = Math.max(0, series.free_minutes || 0) * 60;
 
-  if (access.subscribed || access.owned || freeEpisode) {
+  if (isAdmin || access.subscribed || access.owned || freeEpisode) {
     const s = signBunnyUrl(row.video_url, FULL_TTL);
     return json({ url: s.url, mode: 'full', expires: s.expires, ...subs });
   }

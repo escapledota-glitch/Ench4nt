@@ -91,6 +91,9 @@ const ACTIONS = {
     return { saved: rows.length };
   },
 
+  // Админ нэвтэрсэн эсэхийг шалгах (дэлгэц дээр тааруулах горимд)
+  ping: async () => ({ ok: true }),
+
   // ---------- Хадмал (зөвхөн админ тохируулна) ----------
   // { [ep]: ['mn', 'en'] }
   async listSubtitles({ seriesId }) {

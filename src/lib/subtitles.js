@@ -68,6 +68,7 @@ export const DEFAULT_SUB_MASK = {
   strength: 8,
   expand: 2,
   textColor: 'white', // 'white' | 'yellow' | 'bright'
+  outline: true, // зөвхөн бараан хүрээтэй (хадмалын) бичиг — цагаан хувцас, гэрэл гэх мэтэд нөлөөлөхгүй
 };
 
 export const DEFAULT_SUB_STYLE = {
@@ -124,6 +125,7 @@ export function normalizeSubtitleStyle(s = {}) {
       strength: clamp(m.strength, 2, 24, dm.strength),
       expand: clamp(m.expand, 0, 8, dm.expand),
       textColor: ['white', 'yellow', 'bright'].includes(m.textColor) ? m.textColor : dm.textColor,
+      outline: typeof m.outline === 'boolean' ? m.outline : dm.outline,
     },
   };
 }

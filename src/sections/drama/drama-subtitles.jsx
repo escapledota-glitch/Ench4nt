@@ -191,7 +191,7 @@ function boxSum(src, dst, W, H, r, horizontal) {
   }
 }
 
-export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, expand = 2, textColor = 'white' }) {
+export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, expand = 2, textColor = 'white', outline = true }) {
   const N = W * H;
   let mask = new Float32Array(N);
   for (let i = 0; i < N; i += 1) {
@@ -207,6 +207,25 @@ export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, ex
           ? lum >= threshold // ямар ч өнгийн тод бичиг
           : lum >= threshold && sat <= 70; // цагаан
     if (isText) mask[i] = 1;
+  }
+  // Хадмалын үсэг бараан хүрээ/сүүдэртэй байдаг. Ойролцоо (2px) бараан пиксел байхгүй
+  // тод хэсгийг (цагаан хувцас, хана, гэрэл) бичиг гэж үзэхгүй.
+  if (outline) {
+    const dark = new Float32Array(N);
+    for (let i = 0; i < N; i += 1) {
+      const lum = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+      if (lum < 90) dark[i] = 1;
+    }
+    const t1 = new Float32Array(N);
+    const near = new Float32Array(N);
+    boxSum(dark, t1, W, H, 2, true);
+    boxSum(t1, near, W, H, 2, false);
+    // Үсгийн зураас нарийн тул хүрээнээс 3px-ээс хол цагаан пиксел ч бичиг биш
+    const t2 = new Float32Array(N);
+    const near3 = new Float32Array(N);
+    boxSum(dark, t2, W, H, 3, true);
+    boxSum(t2, near3, W, H, 3, false);
+    for (let i = 0; i < N; i += 1) if (mask[i] && !(near[i] > 0 || near3[i] > 2)) mask[i] = 0;
   }
   // Ирмэгийг томруулна (үсгийн хар хүрээ, сүүдрийг ч хамарна)
   if (expand > 0) {
@@ -247,7 +266,7 @@ export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, ex
 
 function SmartTextBlur({ videoRef, mask, active, onFail }) {
   const canvasRef = useRef(null);
-  const { w: mw, h: mh, y: my, threshold, strength, expand, textColor } = mask;
+  const { w: mw, h: mh, y: my, threshold, strength, expand, textColor, outline } = mask;
 
   useEffect(() => {
     const v = videoRef?.current;
@@ -288,7 +307,7 @@ function SmartTextBlur({ videoRef, mask, active, onFail }) {
       try {
         wctx.drawImage(v, sx, sy, sw, sh, 0, 0, W, H);
         const img = wctx.getImageData(0, 0, W, H);
-        octx.putImageData(inpaintWhiteText(img.data, W, H, { threshold, strength, expand, textColor }), 0, 0);
+        octx.putImageData(inpaintWhiteText(img.data, W, H, { threshold, strength, expand, textColor, outline }), 0, 0);
       } catch {
         // Видеоны зургийг унших эрхгүй (CORS) — энгийн бүдэг тууз руу шилжинэ
         cancelAnimationFrame(raf);
@@ -297,7 +316,7 @@ function SmartTextBlur({ videoRef, mask, active, onFail }) {
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [active, videoRef, mw, mh, my, threshold, strength, expand, textColor, onFail]);
+  }, [active, videoRef, mw, mh, my, threshold, strength, expand, textColor, outline, onFail]);
 
   return (
     <Box
@@ -359,8 +378,10 @@ export function SubtitleLayers({ videoRef, url, style, box, showText = true }) {
   const cues = useCues(url);
   const m = { ...DEFAULT_SUB_MASK, ...(style?.mask || {}) };
   const delay = Number(style?.delay) || 0;
-  const { text, near } = useCueState(videoRef, cues, delay, m.timing === 'subs' ? m.pad : 0);
-  const maskVisible = m.on && (m.timing === 'always' || !cues.length || near);
+  const { text, near } = useCueState(videoRef, cues, delay, m.mode === 'smart' || m.timing === 'subs' ? m.pad : 0);
+  // "Зөвхөн бичиг" горимд манай хадмал гарах үед л ажиллана (бусад үед киноны цагаан зүйлд хүрэхгүй)
+  const timing = m.mode === 'smart' ? 'subs' : m.timing;
+  const maskVisible = m.on && (timing === 'always' || !cues.length || near);
 
   return (
     <>
