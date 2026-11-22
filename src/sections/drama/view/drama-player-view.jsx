@@ -209,6 +209,30 @@ export function DramaPlayerView({ id, initialEp }) {
     [showUi, previewLimit]
   );
 
+  // ---------- Дуу ----------
+  // Утас (ялангуяа iPhone) видеог дуутай өөрөө эхлүүлэхийг зөвшөөрдөггүй — дуугүй эхэлнэ.
+  // Үзэгч дэлгэцэнд АНХ хүрэхэд (аль ч газар) дууг автоматаар асаана. Энэ нь
+  // хүрэлтийн үйлдэл дотор шууд хийгдэх ёстой тул addEventListener-ээр барина.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!muted || !root) return undefined;
+    const unmute = () => {
+      const v = videoRef.current;
+      if (!v) return;
+      v.muted = false;
+      setMuted(false);
+      if (v.paused && !previewEnded) v.play().catch(() => {});
+    };
+    root.addEventListener('pointerdown', unmute, { once: true, capture: true });
+    root.addEventListener('touchend', unmute, { once: true, capture: true });
+    root.addEventListener('keydown', unmute, { once: true, capture: true });
+    return () => {
+      root.removeEventListener('pointerdown', unmute, { capture: true });
+      root.removeEventListener('touchend', unmute, { capture: true });
+      root.removeEventListener('keydown', unmute, { capture: true });
+    };
+  }, [muted, previewEnded]);
+
   // ---------- Бүтэн дэлгэц ----------
   // Android, компьютер: манай тоглуулагч бүхэлдээ бүтэн дэлгэцэнд (хадмал яг ижил).
   // iPhone Safari: вэб хуудсанд бүтэн дэлгэц зөвшөөрдөггүй тул тоглуулагч дотроо
@@ -541,8 +565,8 @@ export function DramaPlayerView({ id, initialEp }) {
               if (videoRef.current) videoRef.current.muted = false;
             }}
             sx={{
-              ...fade,
               position: 'absolute',
+              zIndex: 2,
               top: 'calc(env(safe-area-inset-top, 0px) + 64px)',
               left: 12,
               display: 'flex',
@@ -555,12 +579,14 @@ export function DramaPlayerView({ id, initialEp }) {
               color: '#fff',
               fontFamily: 'inherit',
               fontSize: 13,
-              fontWeight: 600,
-              bgcolor: 'rgba(0,0,0,0.55)',
+              fontWeight: 700,
+              bgcolor: 'rgba(0,0,0,0.6)',
               cursor: 'pointer',
+              animation: 'mutePulse 1.6s ease-in-out infinite',
+              '@keyframes mutePulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(236,72,153,0.5)' }, '50%': { boxShadow: '0 0 0 6px rgba(236,72,153,0)' } },
             }}
           >
-            <Icon name="volumeOff" size={18} /> Дуу асаах
+            <Icon name="volumeOff" size={18} /> Дуу асаахын тулд хүрнэ үү
           </Box>
         )}
 
