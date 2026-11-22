@@ -18,14 +18,15 @@ import LinearProgress from '@mui/material/LinearProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
-import { SUB_LANGS, DEFAULT_SUB_STYLE } from 'src/lib/subtitles';
+import { SUB_LANGS, DEFAULT_SUB_MASK, DEFAULT_SUB_STYLE } from 'src/lib/subtitles';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
-import { useCues, SubtitleText } from 'src/sections/drama/drama-subtitles';
+import { KinoVideo } from 'src/sections/drama/drama-video';
+import { useCues, CoverMask, SubtitleText, usePictureBox, SubtitleOverlay } from 'src/sections/drama/drama-subtitles';
 
-import { errorText, listSubtitles, deleteSubtitle, uploadSubtitle, getSubtitleStyle, saveSubtitleStyle } from '../kino-api';
+import { errorText, previewVideo, listSubtitles, deleteSubtitle, uploadSubtitle, getSubtitleStyle, saveSubtitleStyle } from '../kino-api';
 
 // ----------------------------------------------------------------------
 // Хадмал: анги бүрт .srt/.vtt оруулах + харагдах байдлыг (X, Y, хэмжээ…) тохируулах.
@@ -214,78 +215,174 @@ function Row({ label, value, children }) {
   );
 }
 
+function ColorRow({ label, value, presets, onPick }) {
+  return (
+    <Box>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        {label}
+      </Typography>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1 }}>
+        {presets.map((c) => (
+          <Box
+            key={c}
+            component="button"
+            type="button"
+            aria-label={c}
+            onClick={() => onPick(c)}
+            sx={{
+              width: 30,
+              height: 30,
+              borderRadius: '50%',
+              bgcolor: c,
+              cursor: 'pointer',
+              border: value === c ? '3px solid' : '1px solid',
+              borderColor: value === c ? 'primary.main' : 'divider',
+            }}
+          />
+        ))}
+        <Box
+          component="input"
+          type="color"
+          value={value}
+          onChange={(e) => onPick(e.target.value)}
+          sx={{ width: 40, height: 32, border: 0, bgcolor: 'transparent', cursor: 'pointer' }}
+        />
+      </Stack>
+    </Box>
+  );
+}
+
+function Section({ title, icon, children, action }) {
+  return (
+    <Box sx={{ p: 2, borderRadius: 1.5, border: (t) => `1px solid ${t.vars.palette.divider}` }}>
+      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Iconify icon={icon} width={20} sx={{ color: 'primary.main' }} />
+          <Typography variant="subtitle1">{title}</Typography>
+        </Stack>
+        {action}
+      </Stack>
+      <Stack spacing={2}>{children}</Stack>
+    </Box>
+  );
+}
+
+const BG_PRESETS = ['#000000', '#1d1529', '#0b2a4a', '#ffffff'];
+const MASK_PRESETS = ['#000000', '#120d1b', '#1f2937', '#ffffff'];
+
 function StyleControls({ style, onChange }) {
   const set = (k) => (_e, v) => onChange({ ...style, [k]: v });
+  const mask = style.mask || DEFAULT_SUB_MASK;
+  const setMask = (k) => (_e, v) => onChange({ ...style, mask: { ...mask, [k]: v } });
 
   return (
     <Stack spacing={2}>
-      <Row label="Хэвтээ байрлал (X)" value={`${style.x}%`}>
-        <Slider value={style.x} min={0} max={100} onChange={set('x')} />
-      </Row>
-      <Row label="Босоо байрлал (Y)" value={`${style.y}% (0 = дээр, 100 = доор)`}>
-        <Slider value={style.y} min={0} max={100} onChange={set('y')} />
-      </Row>
-      <Row label="Үсгийн хэмжээ" value={style.size}>
-        <Slider value={style.size} min={10} max={48} onChange={set('size')} />
-      </Row>
-      <Row label="Мөрийн өргөн" value={`${style.width}%`}>
-        <Slider value={style.width} min={40} max={100} onChange={set('width')} />
-      </Row>
-      <Row label="Хугацаа (эрт / хожуу)" value={`${style.delay > 0 ? '+' : ''}${style.delay} сек`}>
-        <Slider value={style.delay} min={-10} max={10} step={0.1} onChange={set('delay')} />
-      </Row>
+      <Section title="Байрлал ба хэмжээ" icon="solar:move-to-folder-bold-duotone">
+        <Row label="Хэвтээ байрлал (X)" value={`${style.x}%`}>
+          <Slider value={style.x} min={0} max={100} onChange={set('x')} />
+        </Row>
+        <Row label="Босоо байрлал (Y)" value={`${style.y}% (0 = дээр, 100 = доор)`}>
+          <Slider value={style.y} min={0} max={100} onChange={set('y')} />
+        </Row>
+        <Row label="Үсгийн хэмжээ" value={style.size}>
+          <Slider value={style.size} min={10} max={48} onChange={set('size')} />
+        </Row>
+        <Row label="Мөрийн өргөн" value={`${style.width}%`}>
+          <Slider value={style.width} min={40} max={100} onChange={set('width')} />
+        </Row>
+        <Row label="Хугацаа (эрт / хожуу)" value={`${style.delay > 0 ? '+' : ''}${style.delay} сек`}>
+          <Slider value={style.delay} min={-10} max={10} step={0.1} onChange={set('delay')} />
+        </Row>
+      </Section>
 
-      <Box>
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-          Өнгө
-        </Typography>
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          {COLORS.map((c) => (
-            <Box
-              key={c}
-              component="button"
-              type="button"
-              aria-label={c}
-              onClick={() => onChange({ ...style, color: c })}
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                bgcolor: c,
-                cursor: 'pointer',
-                border: style.color === c ? '3px solid' : '1px solid',
-                borderColor: style.color === c ? 'primary.main' : 'divider',
-              }}
-            />
-          ))}
-          <Box component="input" type="color" value={style.color} onChange={(e) => onChange({ ...style, color: e.target.value })} sx={{ width: 40, height: 34, border: 0, bgcolor: 'transparent', cursor: 'pointer' }} />
-        </Stack>
-      </Box>
+      <Section title="Үсэг" icon="solar:text-bold-duotone">
+        <ColorRow label="Үсгийн өнгө" value={style.color} presets={COLORS} onPick={(c) => onChange({ ...style, color: c })} />
+        <FormControlLabel control={<Switch checked={style.bold} onChange={(e) => onChange({ ...style, bold: e.target.checked })} />} label="Тод" />
+      </Section>
 
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+      <Section title="Арын фон" icon="solar:pallete-2-bold-duotone">
         <ToggleButtonGroup size="small" exclusive value={style.bg} onChange={(_e, v) => v && onChange({ ...style, bg: v })}>
           <ToggleButton value="none">Ардгүй</ToggleButton>
           <ToggleButton value="shadow">Сүүдэр</ToggleButton>
           <ToggleButton value="box">Хайрцаг</ToggleButton>
         </ToggleButtonGroup>
-        <FormControlLabel control={<Switch checked={style.bold} onChange={(e) => onChange({ ...style, bold: e.target.checked })} />} label="Тод" />
-      </Stack>
+        {style.bg === 'box' && (
+          <>
+            <ColorRow label="Фоны өнгө" value={style.bgColor} presets={BG_PRESETS} onPick={(c) => onChange({ ...style, bgColor: c })} />
+            <Row label="Тунгалаг байдал" value={`${style.bgOpacity}%`}>
+              <Slider value={style.bgOpacity} min={0} max={100} onChange={set('bgOpacity')} />
+            </Row>
+            <Row label="Бүдгэрүүлэлт (blur)" value={style.bgBlur ? `${style.bgBlur}px` : 'Үгүй'}>
+              <Slider value={style.bgBlur} min={0} max={30} onChange={set('bgBlur')} />
+            </Row>
+            <Row label="Хайрцгийн хэмжээ" value={`${style.bgPad}`}>
+              <Slider value={style.bgPad} min={0.1} max={1.5} step={0.05} onChange={set('bgPad')} />
+            </Row>
+          </>
+        )}
+      </Section>
+
+      <Section
+        title="Хуучин хадмал нуух тууз"
+        icon="solar:eye-closed-bold-duotone"
+        action={<Switch checked={mask.on} onChange={(e) => onChange({ ...style, mask: { ...mask, on: e.target.checked } })} />}
+      >
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Видеон дээр шатаагдсан хуучин хадмалын дээгүүр бүдэг/бараан тууз тавьж нууна. Урьдчилан харах видеог хуучин хадмал
+          гарсан мөч рүү гүйлгээд туузыг яг дээр нь тааруулна уу.
+        </Typography>
+        {mask.on && (
+          <>
+            <Row label="Босоо байрлал" value={`${mask.y}%`}>
+              <Slider value={mask.y} min={0} max={100} onChange={setMask('y')} />
+            </Row>
+            <Row label="Өндөр" value={`${mask.h}%`}>
+              <Slider value={mask.h} min={2} max={60} onChange={setMask('h')} />
+            </Row>
+            <Row label="Өргөн" value={`${mask.w}%`}>
+              <Slider value={mask.w} min={10} max={100} onChange={setMask('w')} />
+            </Row>
+            <ColorRow label="Туузны өнгө" value={mask.color} presets={MASK_PRESETS} onPick={(c) => onChange({ ...style, mask: { ...mask, color: c } })} />
+            <Row label="Тунгалаг байдал" value={`${mask.opacity}%`}>
+              <Slider value={mask.opacity} min={0} max={100} onChange={setMask('opacity')} />
+            </Row>
+            <Row label="Бүдгэрүүлэлт (blur)" value={mask.blur ? `${mask.blur}px` : 'Үгүй'}>
+              <Slider value={mask.blur} min={0} max={40} onChange={setMask('blur')} />
+            </Row>
+          </>
+        )}
+      </Section>
     </Stack>
   );
 }
 
 // ----------------------------------------------------------------------
-// Утасны хэмжээтэй урьдчилан харах. Хадмалыг чирж байрлуулж болно.
+// Урьдчилан харах: тухайн киноны жинхэнэ видео + хадмал + тууз (тоглуулагчтай яг ижил).
+// Зураг дээр дарж чирээд хадмал эсвэл туузыг байрлуулна.
 
 function Preview({ seriesId, subs, style, poster, onMove }) {
   const box = useRef(null);
-  const firstEp = subs ? Object.keys(subs).sort((a, b) => a - b)[0] : null;
-  const url =
-    firstEp && subs[firstEp]?.length
-      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/kino/subtitles/${seriesId}/${firstEp}/${subs[firstEp][0]}.vtt?t=${Math.floor(Date.now() / 60000)}`
-      : null;
-  const cues = useCues(url);
-  const text = cues.find((c) => c.text.length > 8)?.text || SAMPLE;
+  const videoRef = useRef(null);
+  const [video, setVideo] = useState(null); // { url, ep }
+  const [playing, setPlaying] = useState(false);
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [dragWhat, setDragWhat] = useState('sub'); // 'sub' | 'mask'
+  const pictureBox = usePictureBox(box, 9 / 16, true);
+
+  useEffect(() => {
+    previewVideo(seriesId)
+      .then((v) => setVideo(v || null))
+      .catch(() => setVideo(null));
+  }, [seriesId]);
+
+  const subEp = video?.ep ?? (subs ? Number(Object.keys(subs).sort((a, b) => a - b)[0]) : null);
+  const subLang = subEp && subs?.[subEp]?.[0];
+  const subUrl = subLang
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/kino/subtitles/${seriesId}/${subEp}/${subLang}.vtt?t=${Math.floor(Date.now() / 60000)}`
+    : null;
+  const cues = useCues(subUrl);
+  const sample = cues.find((c) => c.text.length > 8)?.text || SAMPLE;
 
   const drag = (e) => {
     const el = box.current;
@@ -295,7 +392,7 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
       const r = el.getBoundingClientRect();
       const x = Math.round(Math.min(100, Math.max(0, ((p.clientX - r.left) / r.width) * 100)));
       const y = Math.round(Math.min(100, Math.max(0, ((p.clientY - r.top) / r.height) * 100)));
-      onMove((s) => ({ ...s, x, y }));
+      onMove((s) => (dragWhat === 'mask' ? { ...s, mask: { ...(s.mask || DEFAULT_SUB_MASK), y } } : { ...s, x, y }));
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
@@ -306,11 +403,19 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
     move(e);
   };
 
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
   return (
-    <Box>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-        Урьдчилан харах <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>(дарж чирээд байрлуулна)</Typography>
-      </Typography>
+    <Box sx={{ position: { md: 'sticky' }, top: { md: 90 } }}>
+      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Typography variant="subtitle2">Урьдчилан харах</Typography>
+        <ToggleButtonGroup size="small" exclusive value={dragWhat} onChange={(_e, v) => v && setDragWhat(v)}>
+          <ToggleButton value="sub">Хадмал чирэх</ToggleButton>
+          <ToggleButton value="mask" disabled={!style.mask?.on}>
+            Тууз чирэх
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Stack>
       <Box
         ref={box}
         onPointerDown={drag}
@@ -328,11 +433,71 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
           userSelect: 'none',
         }}
       >
-        {poster && <Box component="img" src={poster} alt="" draggable={false} sx={{ width: 1, height: 1, objectFit: 'cover', opacity: 0.85 }} />}
-        <SubtitleText text={text} style={style} />
+        {video?.url ? (
+          <KinoVideo
+            ref={videoRef}
+            src={video.url}
+            poster={poster}
+            muted
+            playsInline
+            preload="metadata"
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+            onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
+            sx={{ width: 1, height: 1, objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
+          />
+        ) : (
+          poster && <Box component="img" src={poster} alt="" draggable={false} sx={{ width: 1, height: 1, objectFit: 'cover', opacity: 0.85 }} />
+        )}
+
+        <CoverMask style={style} box={pictureBox} />
+        {video?.url && subUrl ? (
+          <SubtitleOverlay videoRef={videoRef} url={subUrl} style={style} box={pictureBox} />
+        ) : (
+          <SubtitleText text={sample} style={style} />
+        )}
+        {video?.url && subUrl && !time && (
+          <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+            <SubtitleText text={sample} style={style} />
+          </Box>
+        )}
       </Box>
-      <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
-        Утас, компьютер дээр ижил харьцаагаар харагдана.
+
+      {video?.url && (
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 1, maxWidth: 300 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            color="inherit"
+            onClick={() => {
+              const v = videoRef.current;
+              if (v) (v.paused ? v.play() : v.pause()).catch?.(() => {});
+            }}
+            sx={{ minWidth: 40, px: 0 }}
+          >
+            <Iconify icon={playing ? 'solar:pause-bold' : 'solar:play-bold'} />
+          </Button>
+          <Slider
+            size="small"
+            value={time}
+            min={0}
+            max={duration || 1}
+            step={0.5}
+            onChange={(_e, v) => {
+              if (videoRef.current) videoRef.current.currentTime = v;
+              setTime(v);
+            }}
+          />
+          <Typography variant="caption" sx={{ color: 'text.secondary', minWidth: 72, textAlign: 'right' }}>
+            {fmt(time)} / {fmt(duration)}
+          </Typography>
+        </Stack>
+      )}
+      <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary', maxWidth: 300 }}>
+        {video?.url
+          ? `${video.ep}-р ангийн видео (дуугүй). Хуучин хадмал гарсан мөч рүү гүйлгэж туузыг тааруулна уу.`
+          : 'Видео оруулаагүй тул постер харуулж байна.'}
       </Typography>
     </Box>
   );

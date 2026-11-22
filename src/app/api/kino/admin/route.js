@@ -1,5 +1,6 @@
 import webpush from 'web-push';
 
+import { signBunnyUrl } from 'src/lib/bunny-sign';
 import {
   SUB_LANGS,
   subtitlePath,
@@ -116,6 +117,13 @@ const ACTIONS = {
   },
 
   getSubtitleStyle: async ({ seriesId }) => readSubtitleStyle(db(), seriesId),
+
+  // Хадмал/туузыг тааруулах урьдчилан харахад: эхний видеотой ангийн гарын үсэгтэй холбоос
+  async previewVideo({ seriesId }) {
+    const rows = must(await db().from('episodes').select('ep, video_url').eq('series_id', seriesId).order('ep').limit(1));
+    if (!rows?.length) return null;
+    return { ep: rows[0].ep, url: signBunnyUrl(rows[0].video_url, 3 * 60 * 60).url };
+  },
 
   async saveSubtitleStyle({ seriesId, style }) {
     const clean = normalizeSubtitleStyle(style);

@@ -48,25 +48,66 @@ export const looksLikeSubtitles = (vtt) => /-->/.test(vtt);
 //   width  — нэг мөрийн дээд өргөн (%)
 // ----------------------------------------------------------------------
 
-export const DEFAULT_SUB_STYLE = { x: 50, y: 82, size: 18, color: '#ffffff', bg: 'shadow', bold: true, delay: 0, width: 86 };
+// bg: 'box' үед — арын фоны өнгө, тунгалаг байдал (%), бүдгэрүүлэлт (px), дотор зай (em)
+// mask: эх видеон дээр шатаагдсан хуучин хадмалыг нуух "хаалт" тууз
+export const DEFAULT_SUB_MASK = { on: false, y: 80, h: 9, w: 100, color: '#000000', opacity: 85, blur: 12 };
+
+export const DEFAULT_SUB_STYLE = {
+  x: 50,
+  y: 82,
+  size: 18,
+  color: '#ffffff',
+  bg: 'shadow',
+  bold: true,
+  delay: 0,
+  width: 86,
+  bgColor: '#000000',
+  bgOpacity: 72,
+  bgBlur: 0,
+  bgPad: 0.45,
+  mask: DEFAULT_SUB_MASK,
+};
 
 const clamp = (v, min, max, d) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : d;
 };
+const hex = (v, d) => (/^#[0-9a-f]{6}$/i.test(v ?? '') ? v : d);
 
 export function normalizeSubtitleStyle(s = {}) {
   const d = DEFAULT_SUB_STYLE;
+  const m = s.mask || {};
+  const dm = DEFAULT_SUB_MASK;
   return {
     x: clamp(s.x, 0, 100, d.x),
     y: clamp(s.y, 0, 100, d.y),
     size: clamp(s.size, 10, 48, d.size),
-    color: /^#[0-9a-f]{6}$/i.test(s.color ?? '') ? s.color : d.color,
+    color: hex(s.color, d.color),
     bg: ['none', 'shadow', 'box'].includes(s.bg) ? s.bg : d.bg,
     bold: typeof s.bold === 'boolean' ? s.bold : d.bold,
     delay: Math.round(clamp(s.delay, -30, 30, d.delay) * 10) / 10,
     width: clamp(s.width, 40, 100, d.width),
+    bgColor: hex(s.bgColor, d.bgColor),
+    bgOpacity: clamp(s.bgOpacity, 0, 100, d.bgOpacity),
+    bgBlur: clamp(s.bgBlur, 0, 30, d.bgBlur),
+    bgPad: Math.round(clamp(s.bgPad, 0.1, 1.5, d.bgPad) * 100) / 100,
+    mask: {
+      on: typeof m.on === 'boolean' ? m.on : dm.on,
+      y: clamp(m.y, 0, 100, dm.y),
+      h: clamp(m.h, 2, 60, dm.h),
+      w: clamp(m.w, 10, 100, dm.w),
+      color: hex(m.color, dm.color),
+      opacity: clamp(m.opacity, 0, 100, dm.opacity),
+      blur: clamp(m.blur, 0, 40, dm.blur),
+    },
   };
+}
+
+// '#rrggbb' + 0–100% → 'rgba(r,g,b,a)'
+export function rgba(hexColor, opacityPct) {
+  const h = hexColor.replace('#', '');
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  return `rgba(${r},${g},${b},${(opacityPct / 100).toFixed(2)})`;
 }
 
 export const subtitleStylePath = (seriesId) => `subtitles/${seriesId}/style.json`;

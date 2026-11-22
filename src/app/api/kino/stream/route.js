@@ -44,7 +44,8 @@ async function subtitlesFor(d, seriesId, ep) {
         label: SUB_LANGS[f.lang],
         url: `${storage.getPublicUrl(subtitlePath(seriesId, ep, f.lang)).data.publicUrl}?v=${encodeURIComponent(f.v || '')}`,
       }));
-    if (!subtitles.length) return { subtitles: [] };
+    // Хадмалгүй ч гэсэн хаалт тууз (mask) ажиллахын тулд тохиргоог үргэлж өгнө
+    if (!subtitles.length) return { subtitles: [], subtitleStyle: style };
     return { subtitles, subtitleStyle: style };
   } catch {
     return { subtitles: [] };

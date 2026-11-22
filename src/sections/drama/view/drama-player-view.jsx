@@ -13,7 +13,7 @@ import { isHls, KinoVideo } from '../drama-video';
 import { useDramaStore } from '../use-drama-store';
 import { C, Icon , NotFoundState } from '../drama-ui';
 import { useCatalog, useStreamUrl } from '../drama-catalog';
-import { usePictureBox, SubtitleOverlay } from '../drama-subtitles';
+import { CoverMask, usePictureBox, SubtitleOverlay } from '../drama-subtitles';
 import { freeLabel, isForSale, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
 
 // ----------------------------------------------------------------------
@@ -481,6 +481,9 @@ export function DramaPlayerView({ id, initialEp }) {
 
         {/* Хөдөлгөөнт усан тэмдэг — дэлгэц бичлэг хийвэл хэн болохыг харуулна */}
         {!locked && <Watermark />}
+
+        {/* Эх видеоны хуучин (шатаагдсан) хадмалыг нуух тууз — админ тохируулна */}
+        {!showPaywall && <CoverMask style={stream.subtitleStyle} box={pictureBox} />}
 
         {/* Хадмал — байрлал, хэмжээг админ тохируулна */}
         {!showPaywall && stream.subtitles?.length > 0 && (

@@ -61,6 +61,7 @@ export const listSubtitles = (seriesId) => call('listSubtitles', { seriesId });
 export const deleteSubtitle = (seriesId, ep, lang) => call('deleteSubtitle', { seriesId, ep, lang });
 export const getSubtitleStyle = (seriesId) => call('getSubtitleStyle', { seriesId });
 export const saveSubtitleStyle = (seriesId, style) => call('saveSubtitleStyle', { seriesId, style });
+export const previewVideo = (seriesId) => call('previewVideo', { seriesId });
 
 export async function uploadSubtitle(seriesId, ep, lang, file) {
   const form = new FormData();

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 
-import { DEFAULT_SUB_STYLE } from 'src/lib/subtitles';
+import { rgba, DEFAULT_SUB_MASK, DEFAULT_SUB_STYLE } from 'src/lib/subtitles';
 
 // ----------------------------------------------------------------------
 // Хадмал харуулах давхарга. Байрлал, хэмжээ, өнгийг админ тохируулна —
@@ -65,9 +65,26 @@ export function SubtitleText({ text, style, pictureWidth }) {
   const s = { ...DEFAULT_SUB_STYLE, ...style };
   if (!text) return null;
 
+  // Бүдгэрүүлэлтийг зурагны хэмжээнд пропорциональ болгоно
+  const scale = pictureWidth ? pictureWidth / 390 : 1;
+  const blur = (s.bgBlur || 0) * scale;
+
   const bgSx =
     s.bg === 'box'
-      ? { bgcolor: 'rgba(0,0,0,0.72)', px: '0.45em', py: '0.15em', borderRadius: '0.25em', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }
+      ? {
+          bgcolor: rgba(s.bgColor || '#000000', s.bgOpacity ?? 72),
+          px: `${s.bgPad ?? 0.45}em`,
+          py: `${((s.bgPad ?? 0.45) / 3).toFixed(2)}em`,
+          borderRadius: '0.25em',
+          boxDecorationBreak: 'clone',
+          WebkitBoxDecorationBreak: 'clone',
+          // бүдгэрүүлэлт нь мөрийн хайрцаг биш, нэг блок дээр ажилладаг
+          ...(blur > 0 && {
+            display: 'inline-block',
+            backdropFilter: `blur(${blur.toFixed(1)}px)`,
+            WebkitBackdropFilter: `blur(${blur.toFixed(1)}px)`,
+          }),
+        }
       : s.bg === 'shadow'
         ? { textShadow: '0 0 0.25em rgba(0,0,0,0.95), 0 0.08em 0.15em rgba(0,0,0,0.95), 0 0 0.6em rgba(0,0,0,0.7)' }
         : {};
@@ -98,6 +115,44 @@ export function SubtitleText({ text, style, pictureWidth }) {
       >
         {text}
       </Box>
+    </Box>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Эх видеон дээр шатаагдсан хуучин хадмалыг нуух тууз.
+// box: зурагны байрлал (тоглуулагчид) — байхгүй бол эх элементээ бүрэн хамарна (админы урьдчилан харах).
+export function CoverMask({ style, box }) {
+  const m = { ...DEFAULT_SUB_MASK, ...(style?.mask || {}) };
+  if (!m.on) return null;
+  const scale = box ? box.width / 390 : 1;
+  const blur = (m.blur || 0) * scale;
+
+  const band = (
+    <Box
+      aria-hidden
+      sx={{
+        position: 'absolute',
+        left: '50%',
+        top: `${m.y}%`,
+        width: `${m.w}%`,
+        height: `${m.h}%`,
+        transform: 'translate(-50%, -50%)',
+        bgcolor: rgba(m.color, m.opacity),
+        backdropFilter: blur > 0 ? `blur(${blur.toFixed(1)}px)` : 'none',
+        WebkitBackdropFilter: blur > 0 ? `blur(${blur.toFixed(1)}px)` : 'none',
+        // ирмэгийг зөөлрүүлнэ — хурц шугам харагдахгүй
+        maskImage: 'linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%)',
+        pointerEvents: 'none',
+      }}
+    />
+  );
+
+  if (!box) return band;
+  return (
+    <Box sx={{ position: 'absolute', left: box.left, top: box.top, width: box.width, height: box.height, pointerEvents: 'none', zIndex: 1 }}>
+      {band}
     </Box>
   );
 }
