@@ -280,7 +280,7 @@ function Hero({ items, saved, onSave }) {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1.5 }}>
             {s.badge && <Badge>{s.badge}</Badge>}
             <Box sx={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>
-              444 Кино · Цуврал
+              444 Кино · {s.episodes === 1 ? 'Кино' : 'Цуврал'}
             </Box>
           </Box>
 

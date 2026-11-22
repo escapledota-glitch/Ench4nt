@@ -85,7 +85,7 @@ export function DramaSeriesView({ id }) {
           <Box sx={{ minWidth: 0, flex: 1, maxWidth: 680 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
               {series.badge && <Badge>{series.badge}</Badge>}
-              <Box sx={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>Цуврал</Box>
+              <Box sx={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>{series.episodes === 1 ? 'Кино' : 'Цуврал'}</Box>
             </Box>
             <Box component="h1" sx={{ m: 0, mt: 1.25, fontSize: { xs: 'clamp(34px, 10vw, 48px)', md: 64 }, fontWeight: 900, lineHeight: 0.98, letterSpacing: { xs: -1, md: -2 }, textWrap: 'balance', textShadow: '0 10px 40px rgba(0,0,0,0.6)' }}>
               {series.title}
