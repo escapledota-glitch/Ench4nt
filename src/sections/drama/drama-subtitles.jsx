@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 
@@ -120,54 +120,14 @@ export function SubtitleText({ text, style, pictureWidth }) {
 }
 
 // ----------------------------------------------------------------------
-// Эх видеон дээр шатаагдсан хуучин хадмалыг нуух тууз.
-// box: зурагны байрлал (тоглуулагчид) — байхгүй бол эх элементээ бүрэн хамарна (админы урьдчилан харах).
-export function CoverMask({ style, box }) {
-  const m = { ...DEFAULT_SUB_MASK, ...(style?.mask || {}) };
-  if (!m.on) return null;
-  const scale = box ? box.width / 390 : 1;
-  const blur = (m.blur || 0) * scale;
-
-  const band = (
-    <Box
-      aria-hidden
-      sx={{
-        position: 'absolute',
-        left: '50%',
-        top: `${m.y}%`,
-        width: `${m.w}%`,
-        height: `${m.h}%`,
-        transform: 'translate(-50%, -50%)',
-        bgcolor: rgba(m.color, m.opacity),
-        backdropFilter: blur > 0 ? `blur(${blur.toFixed(1)}px)` : 'none',
-        WebkitBackdropFilter: blur > 0 ? `blur(${blur.toFixed(1)}px)` : 'none',
-        // ирмэгийг зөөлрүүлнэ — хурц шугам харагдахгүй
-        maskImage: 'linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%)',
-        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%)',
-        pointerEvents: 'none',
-      }}
-    />
-  );
-
-  if (!box) return band;
-  return (
-    <Box sx={{ position: 'absolute', left: box.left, top: box.top, width: box.width, height: box.height, pointerEvents: 'none', zIndex: 1 }}>
-      {band}
-    </Box>
-  );
-}
-
-// Тоглуулагч дээр — видеоны цагийг дагана.
-// box: видеоны зураг дэлгэц дээр яг хаана байгаа ({ left, top, width, height } px) —
-// хадмалыг зурагт наана. Дэлгэцээс илүү гарсан хэсэгт (тайрагдсан) текст гарахгүй.
-export function SubtitleOverlay({ videoRef, url, style, box }) {
-  const cues = useCues(url);
-  const [text, setText] = useState('');
-  const delay = Number(style?.delay) || 0;
+// Хадмалын одоогийн мөр + манай хадмал гарах мөчийн ойролцоо эсэх (±pad сек).
+// Хуучин (шатаагдсан) хадмал ихэвчлэн яг ижил мөчид гардаг тул туузыг тэр үед л харуулна.
+export function useCueState(videoRef, cues, delay = 0, pad = 0) {
+  const [state, setState] = useState({ text: '', near: false });
 
   useEffect(() => {
     if (!cues.length) {
-      setText('');
+      setState({ text: '', near: false });
       return undefined;
     }
     let raf;
@@ -176,34 +136,260 @@ export function SubtitleOverlay({ videoRef, url, style, box }) {
       if (v) {
         const t = v.currentTime - delay;
         const cue = cues.find((c) => t >= c.start && t <= c.end);
-        const next = cue ? cue.text : '';
-        setText((prev) => (prev === next ? prev : next));
+        const text = cue ? cue.text : '';
+        const near = !!cue || (pad > 0 && cues.some((c) => t >= c.start - pad && t <= c.end + pad));
+        setState((prev) => (prev.text === text && prev.near === near ? prev : { text, near }));
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [cues, delay, videoRef]);
+  }, [cues, delay, pad, videoRef]);
 
-  if (!box) return <SubtitleText text={text} style={style} />;
+  return state;
+}
 
-  // Хэвтээ байрлал: дэлгэц дээр харагдаж буй хэсэгт (зураг хажуугаараа тайрагдсан бол)
+// Зурагны байрлалд наасан давхарга
+function PictureLayer({ box, children }) {
+  if (!box) return children;
   return (
     <Box
       sx={{
         position: 'absolute',
         top: box.top,
         height: box.height,
-        left: Math.max(0, box.left),
-        width: Math.min(box.width, box.visibleWidth ?? box.width),
+        left: box.left,
+        width: box.width,
         pointerEvents: 'none',
         zIndex: 1,
       }}
     >
-      <SubtitleText text={text} style={style} pictureWidth={box.width} />
+      {children}
     </Box>
   );
 }
+
+// ----------------------------------------------------------------------
+// "Зөвхөн цагаан бичгийг бүдгэрүүлэх": туузны доторх цагаан пикселүүдийг олж,
+// эргэн тойрных нь (цагаан биш) зургийн өнгөөр бөглөнө. Бусад хэсэг тод хэвээр.
+// Жижиг хэмжээнд (≈320px өргөн) боловсруулдаг тул утсан дээр хөнгөн.
+
+function boxSum(src, dst, W, H, r, horizontal) {
+  const len = horizontal ? W : H;
+  const lines = horizontal ? H : W;
+  for (let l = 0; l < lines; l += 1) {
+    const idx = (k) => (horizontal ? l * W + k : k * W + l);
+    let acc = 0;
+    for (let k = 0; k <= Math.min(r, len - 1); k += 1) acc += src[idx(k)];
+    for (let k = 0; k < len; k += 1) {
+      dst[idx(k)] = acc;
+      const add = k + r + 1;
+      const sub = k - r;
+      if (add < len) acc += src[idx(add)];
+      if (sub >= 0) acc -= src[idx(sub)];
+    }
+  }
+}
+
+export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, expand = 2, textColor = 'white' }) {
+  const N = W * H;
+  let mask = new Float32Array(N);
+  for (let i = 0; i < N; i += 1) {
+    const r = data[i * 4];
+    const g = data[i * 4 + 1];
+    const b = data[i * 4 + 2];
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    const sat = Math.max(r, g, b) - Math.min(r, g, b);
+    const isText =
+      textColor === 'yellow'
+        ? r >= threshold - 20 && g >= threshold - 40 && b < g - 60 // шар: улаан, ногоон өндөр, цэнхэр бага
+        : textColor === 'bright'
+          ? lum >= threshold // ямар ч өнгийн тод бичиг
+          : lum >= threshold && sat <= 70; // цагаан
+    if (isText) mask[i] = 1;
+  }
+  // Ирмэгийг томруулна (үсгийн хар хүрээ, сүүдрийг ч хамарна)
+  if (expand > 0) {
+    const tmp = new Float32Array(N);
+    const tmp2 = new Float32Array(N);
+    boxSum(mask, tmp, W, H, expand, true);
+    boxSum(tmp, tmp2, W, H, expand, false);
+    mask = tmp2.map((v) => (v > 0 ? 1 : 0));
+  }
+  // Цагаан биш пикселийн өнгөний жигнэсэн дундаж (normalized box blur)
+  const ch = [new Float32Array(N), new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+  for (let i = 0; i < N; i += 1) {
+    const w = mask[i] ? 0 : 1;
+    ch[0][i] = data[i * 4] * w;
+    ch[1][i] = data[i * 4 + 1] * w;
+    ch[2][i] = data[i * 4 + 2] * w;
+    ch[3][i] = w;
+  }
+  const t = new Float32Array(N);
+  const outCh = ch.map((c) => {
+    const o = new Float32Array(N);
+    boxSum(c, t, W, H, strength, true);
+    boxSum(t, o, W, H, strength, false);
+    return o;
+  });
+  const out = new ImageData(W, H);
+  for (let i = 0; i < N; i += 1) {
+    const ww = outCh[3][i];
+    if (mask[i] && ww > 0.5) {
+      out.data[i * 4] = outCh[0][i] / ww;
+      out.data[i * 4 + 1] = outCh[1][i] / ww;
+      out.data[i * 4 + 2] = outCh[2][i] / ww;
+      out.data[i * 4 + 3] = 255;
+    }
+  }
+  return out;
+}
+
+function SmartTextBlur({ videoRef, mask, active, onFail }) {
+  const canvasRef = useRef(null);
+  const { w: mw, h: mh, y: my, threshold, strength, expand, textColor } = mask;
+
+  useEffect(() => {
+    const v = videoRef?.current;
+    const out = canvasRef.current;
+    if (!active || !v || !out) {
+      if (out) out.getContext('2d').clearRect(0, 0, out.width, out.height);
+      return undefined;
+    }
+    const work = document.createElement('canvas');
+    const wctx = work.getContext('2d', { willReadFrequently: true });
+    const octx = out.getContext('2d');
+    let raf;
+    let last = -1;
+    let lastRun = 0;
+
+    const frame = (now) => {
+      raf = requestAnimationFrame(frame);
+      if (now - lastRun < 50) return; // ≈20fps — хадмалд хангалттай, утсанд хөнгөн
+      const vw = v.videoWidth;
+      const vh = v.videoHeight;
+      if (!vw || !vh || v.readyState < 2) return;
+      if (v.paused && v.currentTime === last) return; // зогссон үед дахин боловсруулахгүй
+      last = v.currentTime;
+      lastRun = now;
+
+      const sw = (vw * mw) / 100;
+      const sh = (vh * mh) / 100;
+      const sx = (vw - sw) / 2;
+      const sy = (vh * my) / 100 - sh / 2;
+      const W = Math.max(64, Math.round((320 * mw) / 100));
+      const H = Math.max(8, Math.round((W * sh) / sw));
+      if (work.width !== W || work.height !== H) {
+        work.width = W;
+        work.height = H;
+        out.width = W;
+        out.height = H;
+      }
+      try {
+        wctx.drawImage(v, sx, sy, sw, sh, 0, 0, W, H);
+        const img = wctx.getImageData(0, 0, W, H);
+        octx.putImageData(inpaintWhiteText(img.data, W, H, { threshold, strength, expand, textColor }), 0, 0);
+      } catch {
+        // Видеоны зургийг унших эрхгүй (CORS) — энгийн бүдэг тууз руу шилжинэ
+        cancelAnimationFrame(raf);
+        onFail?.();
+      }
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, [active, videoRef, mw, mh, my, threshold, strength, expand, textColor, onFail]);
+
+  return (
+    <Box
+      component="canvas"
+      ref={canvasRef}
+      aria-hidden
+      sx={{ position: 'absolute', inset: 0, width: 1, height: 1, filter: 'blur(0.6px)', opacity: active ? 1 : 0 }}
+    />
+  );
+}
+
+// ----------------------------------------------------------------------
+// Эх видеон дээр шатаагдсан хуучин хадмалыг нуух хаалт.
+// visible: одоо харуулах эсэх (timing = 'subs' үед манай хадмалтай зэрэг)
+export function CoverMask({ style, box, visible = true, videoRef }) {
+  const m = { ...DEFAULT_SUB_MASK, ...(style?.mask || {}) };
+  const [smartFailed, setSmartFailed] = useState(false);
+  const onFail = useCallback(() => setSmartFailed(true), []);
+  if (!m.on) return null;
+
+  const scale = box ? box.width / 390 : 1;
+  const smart = m.mode === 'smart' && !!videoRef && !smartFailed;
+  const blur = (m.blur || 0) * scale;
+
+  return (
+    <PictureLayer box={box}>
+      <Box
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          left: '50%',
+          top: `${m.y}%`,
+          width: `${m.w}%`,
+          height: `${m.h}%`,
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'none',
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 140ms ease',
+          ...(!smart && {
+            bgcolor: rgba(m.color, m.opacity),
+            backdropFilter: blur > 0 ? `blur(${blur.toFixed(1)}px)` : 'none',
+            WebkitBackdropFilter: blur > 0 ? `blur(${blur.toFixed(1)}px)` : 'none',
+            // ирмэгийг зөөлрүүлнэ — хурц шугам харагдахгүй
+            maskImage: 'linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%)',
+          }),
+        }}
+      >
+        {smart && <SmartTextBlur videoRef={videoRef} mask={m} active={visible} onFail={onFail} />}
+      </Box>
+    </PictureLayer>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Тоглуулагч (болон админы урьдчилан харах): хаалт + хадмал, видеоны цагийг дагана.
+// box: видеоны зураг дэлгэц дээр яг хаана байгаа ({ left, top, width, height } px).
+export function SubtitleLayers({ videoRef, url, style, box, showText = true }) {
+  const cues = useCues(url);
+  const m = { ...DEFAULT_SUB_MASK, ...(style?.mask || {}) };
+  const delay = Number(style?.delay) || 0;
+  const { text, near } = useCueState(videoRef, cues, delay, m.timing === 'subs' ? m.pad : 0);
+  const maskVisible = m.on && (m.timing === 'always' || !cues.length || near);
+
+  return (
+    <>
+      <CoverMask style={style} box={box} visible={maskVisible} videoRef={videoRef} />
+      {showText &&
+        (box ? (
+          // Хэвтээ байрлал: дэлгэц дээр харагдаж буй хэсэгт (зураг хажуугаараа тайрагдсан бол)
+          <Box
+            sx={{
+              position: 'absolute',
+              top: box.top,
+              height: box.height,
+              left: Math.max(0, box.left),
+              width: Math.min(box.width, box.visibleWidth ?? box.width),
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          >
+            <SubtitleText text={text} style={style} pictureWidth={box.width} />
+          </Box>
+        ) : (
+          <SubtitleText text={text} style={style} />
+        ))}
+    </>
+  );
+}
+
+// Хуучин нэр (нийцтэй байлгах)
+export const SubtitleOverlay = SubtitleLayers;
 
 // ----------------------------------------------------------------------
 // Видеоны зураг (object-fit: cover) дэлгэц дээр хаана, ямар хэмжээтэй байгааг тооцно

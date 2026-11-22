@@ -50,7 +50,25 @@ export const looksLikeSubtitles = (vtt) => /-->/.test(vtt);
 
 // bg: 'box' үед — арын фоны өнгө, тунгалаг байдал (%), бүдгэрүүлэлт (px), дотор зай (em)
 // mask: эх видеон дээр шатаагдсан хуучин хадмалыг нуух "хаалт" тууз
-export const DEFAULT_SUB_MASK = { on: false, y: 80, h: 9, w: 100, color: '#000000', opacity: 85, blur: 12 };
+// mode:   'band'  = өнгөт/бүдэг тууз бүхэлдээ
+//         'smart' = зөвхөн цагаан бичгийг олж, эргэн тойрных нь зургаар бөглөж бүдгэрүүлнэ
+// timing: 'always' = үргэлж, 'subs' = манай хадмал гарах үед л (±pad сек)
+export const DEFAULT_SUB_MASK = {
+  on: false,
+  y: 80,
+  h: 9,
+  w: 100,
+  color: '#000000',
+  opacity: 85,
+  blur: 12,
+  mode: 'band',
+  timing: 'always',
+  pad: 0.4,
+  threshold: 200,
+  strength: 8,
+  expand: 2,
+  textColor: 'white', // 'white' | 'yellow' | 'bright'
+};
 
 export const DEFAULT_SUB_STYLE = {
   x: 50,
@@ -99,6 +117,13 @@ export function normalizeSubtitleStyle(s = {}) {
       color: hex(m.color, dm.color),
       opacity: clamp(m.opacity, 0, 100, dm.opacity),
       blur: clamp(m.blur, 0, 40, dm.blur),
+      mode: ['band', 'smart'].includes(m.mode) ? m.mode : dm.mode,
+      timing: ['always', 'subs'].includes(m.timing) ? m.timing : dm.timing,
+      pad: Math.round(clamp(m.pad, 0, 3, dm.pad) * 10) / 10,
+      threshold: clamp(m.threshold, 120, 255, dm.threshold),
+      strength: clamp(m.strength, 2, 24, dm.strength),
+      expand: clamp(m.expand, 0, 8, dm.expand),
+      textColor: ['white', 'yellow', 'bright'].includes(m.textColor) ? m.textColor : dm.textColor,
     },
   };
 }

@@ -13,7 +13,7 @@ import { isHls, KinoVideo } from '../drama-video';
 import { useDramaStore } from '../use-drama-store';
 import { C, Icon , NotFoundState } from '../drama-ui';
 import { useCatalog, useStreamUrl } from '../drama-catalog';
-import { CoverMask, usePictureBox, SubtitleOverlay } from '../drama-subtitles';
+import { usePictureBox, SubtitleLayers } from '../drama-subtitles';
 import { freeLabel, isForSale, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
 
 // ----------------------------------------------------------------------
@@ -435,6 +435,8 @@ export function DramaPlayerView({ id, initialEp }) {
               src={videoSrc}
               poster={series.poster}
               controlsList="nodownload noremoteplayback"
+              // "цагаан бичгийг бүдгэрүүлэх" нь видеоны зургийг унших шаардлагатай
+              crossOrigin="anonymous"
               disablePictureInPicture
               disableRemotePlayback
               playsInline
@@ -482,12 +484,14 @@ export function DramaPlayerView({ id, initialEp }) {
         {/* Хөдөлгөөнт усан тэмдэг — дэлгэц бичлэг хийвэл хэн болохыг харуулна */}
         {!locked && <Watermark />}
 
-        {/* Эх видеоны хуучин (шатаагдсан) хадмалыг нуух тууз — админ тохируулна */}
-        {!showPaywall && <CoverMask style={stream.subtitleStyle} box={pictureBox} />}
-
-        {/* Хадмал — байрлал, хэмжээг админ тохируулна */}
-        {!showPaywall && stream.subtitles?.length > 0 && (
-          <SubtitleOverlay videoRef={videoRef} url={stream.subtitles[0].url} style={stream.subtitleStyle} box={pictureBox} />
+        {/* Хуучин (шатаагдсан) хадмалыг нуух хаалт + манай хадмал — бүгдийг админ тохируулна */}
+        {!showPaywall && (
+          <SubtitleLayers
+            videoRef={videoRef}
+            url={stream.subtitles?.[0]?.url || null}
+            style={stream.subtitleStyle}
+            box={pictureBox}
+          />
         )}
 
         {/* Дээд, доод сүүдэр */}

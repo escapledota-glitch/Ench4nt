@@ -24,7 +24,7 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
 import { KinoVideo } from 'src/sections/drama/drama-video';
-import { useCues, CoverMask, SubtitleText, usePictureBox, SubtitleOverlay } from 'src/sections/drama/drama-subtitles';
+import { useCues, CoverMask, SubtitleText, usePictureBox, SubtitleLayers } from 'src/sections/drama/drama-subtitles';
 
 import { errorText, previewVideo, listSubtitles, deleteSubtitle, uploadSubtitle, getSubtitleStyle, saveSubtitleStyle } from '../kino-api';
 
@@ -333,6 +333,36 @@ function StyleControls({ style, onChange }) {
         </Typography>
         {mask.on && (
           <>
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Хэрхэн нуух
+              </Typography>
+              <ToggleButtonGroup size="small" exclusive value={mask.mode} onChange={(_e, v) => v && onChange({ ...style, mask: { ...mask, mode: v } })}>
+                <ToggleButton value="band">Тууз (бүхэлд нь)</ToggleButton>
+                <ToggleButton value="smart">Зөвхөн бичгийг бүдгэрүүлэх</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Хэзээ харуулах
+              </Typography>
+              <ToggleButtonGroup size="small" exclusive value={mask.timing} onChange={(_e, v) => v && onChange({ ...style, mask: { ...mask, timing: v } })}>
+                <ToggleButton value="always">Үргэлж</ToggleButton>
+                <ToggleButton value="subs">Манай хадмал гарах үед л</ToggleButton>
+              </ToggleButtonGroup>
+              {mask.timing === 'subs' && (
+                <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'text.secondary' }}>
+                  Хуучин хадмал манай хадмалтай бараг ижил мөчид гардаг тул тэр үед л нууна. Хадмал файл оруулаагүй ангид үргэлж харагдана.
+                </Typography>
+              )}
+            </Box>
+            {mask.timing === 'subs' && (
+              <Row label="Хугацааны нөөц (өмнө/хойно)" value={`±${mask.pad} сек`}>
+                <Slider value={mask.pad} min={0} max={3} step={0.1} onChange={setMask('pad')} />
+              </Row>
+            )}
+
             <Row label="Босоо байрлал" value={`${mask.y}%`}>
               <Slider value={mask.y} min={0} max={100} onChange={setMask('y')} />
             </Row>
@@ -342,13 +372,47 @@ function StyleControls({ style, onChange }) {
             <Row label="Өргөн" value={`${mask.w}%`}>
               <Slider value={mask.w} min={10} max={100} onChange={setMask('w')} />
             </Row>
-            <ColorRow label="Туузны өнгө" value={mask.color} presets={MASK_PRESETS} onPick={(c) => onChange({ ...style, mask: { ...mask, color: c } })} />
-            <Row label="Тунгалаг байдал" value={`${mask.opacity}%`}>
-              <Slider value={mask.opacity} min={0} max={100} onChange={setMask('opacity')} />
-            </Row>
-            <Row label="Бүдгэрүүлэлт (blur)" value={mask.blur ? `${mask.blur}px` : 'Үгүй'}>
-              <Slider value={mask.blur} min={0} max={40} onChange={setMask('blur')} />
-            </Row>
+            {mask.mode === 'smart' ? (
+              <>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Туузны доторх зөвхөн цагаан үсгийг олж, эргэн тойрных нь зургаар бөглөнө — бусад хэсэг тод хэвээр.
+                </Typography>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Хуучин хадмалын өнгө
+                  </Typography>
+                  <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={mask.textColor}
+                    onChange={(_e, v) => v && onChange({ ...style, mask: { ...mask, textColor: v } })}
+                  >
+                    <ToggleButton value="white">Цагаан</ToggleButton>
+                    <ToggleButton value="yellow">Шар</ToggleButton>
+                    <ToggleButton value="bright">Ямар ч тод өнгө</ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+                <Row label="Мэдрэмж (хэр тод бол бичиг гэж үзэх)" value={mask.threshold >= 230 ? 'Зөвхөн цэвэр цагаан' : mask.threshold <= 160 ? 'Саарал ч орно' : 'Дунд'}>
+                  <Slider value={mask.threshold} min={120} max={255} onChange={setMask('threshold')} />
+                </Row>
+                <Row label="Бүдгэрүүлэлтийн хүч" value={mask.strength}>
+                  <Slider value={mask.strength} min={2} max={24} onChange={setMask('strength')} />
+                </Row>
+                <Row label="Үсгийн эргэн тойрон (хүрээ, сүүдэр)" value={`${mask.expand}px`}>
+                  <Slider value={mask.expand} min={0} max={8} onChange={setMask('expand')} />
+                </Row>
+              </>
+            ) : (
+              <>
+                <ColorRow label="Туузны өнгө" value={mask.color} presets={MASK_PRESETS} onPick={(c) => onChange({ ...style, mask: { ...mask, color: c } })} />
+                <Row label="Тунгалаг байдал" value={`${mask.opacity}%`}>
+                  <Slider value={mask.opacity} min={0} max={100} onChange={setMask('opacity')} />
+                </Row>
+                <Row label="Бүдгэрүүлэлт (blur)" value={mask.blur ? `${mask.blur}px` : 'Үгүй'}>
+                  <Slider value={mask.blur} min={0} max={40} onChange={setMask('blur')} />
+                </Row>
+              </>
+            )}
           </>
         )}
       </Section>
@@ -438,6 +502,7 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
             ref={videoRef}
             src={video.url}
             poster={poster}
+            crossOrigin="anonymous"
             muted
             playsInline
             preload="metadata"
@@ -451,11 +516,14 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
           poster && <Box component="img" src={poster} alt="" draggable={false} sx={{ width: 1, height: 1, objectFit: 'cover', opacity: 0.85 }} />
         )}
 
-        <CoverMask style={style} box={pictureBox} />
-        {video?.url && subUrl ? (
-          <SubtitleOverlay videoRef={videoRef} url={subUrl} style={style} box={pictureBox} />
+        {video?.url ? (
+          // Тоглуулагчтай яг ижил: хаалт (хадмалтай үед/үргэлж) + хадмал
+          <SubtitleLayers videoRef={videoRef} url={subUrl} style={style} box={pictureBox} />
         ) : (
-          <SubtitleText text={sample} style={style} />
+          <>
+            <CoverMask style={style} box={pictureBox} />
+            <SubtitleText text={sample} style={style} />
+          </>
         )}
         {video?.url && subUrl && !time && (
           <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
