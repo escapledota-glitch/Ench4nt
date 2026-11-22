@@ -6,6 +6,9 @@ import Box from '@mui/material/Box';
 
 import { RouterLink } from 'src/routes/components';
 
+import { useDramaAuth } from './drama-auth';
+import { priceOf, isForSale, formatPrice } from './drama-data';
+
 // ----------------------------------------------------------------------
 // 444 Кино — өнгө, фонт, icon, постер карт, хөдөлгөөн
 // ----------------------------------------------------------------------
@@ -153,6 +156,48 @@ export function Badge({ children, sx }) {
   );
 }
 
+// Постерын баруун дээд буланд — үнэ эсвэл "Таных"
+export function PriceTag({ series, sx }) {
+  const { owns, isSubscribed } = useDramaAuth();
+  if (!isForSale(series)) return null;
+  const mine = owns(series.id);
+  if (isSubscribed && !mine) return null; // багцтай хүнд үнэ хэрэггүй
+
+  return (
+    <Box
+      component="span"
+      sx={{
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        zIndex: 1,
+        px: 0.9,
+        py: 0.35,
+        borderRadius: 1,
+        fontSize: 11,
+        fontWeight: 800,
+        lineHeight: 1.3,
+        color: mine ? '#052e16' : '#1a1200',
+        bgcolor: mine ? '#4ade80' : C.gold,
+        boxShadow: '0 4px 14px -4px rgba(0,0,0,0.6)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.3,
+        whiteSpace: 'nowrap',
+        ...sx,
+      }}
+    >
+      {mine ? (
+        <>
+          <Icon name="check" size={12} /> Таных
+        </>
+      ) : (
+        formatPrice(priceOf(series))
+      )}
+    </Box>
+  );
+}
+
 // ----------------------------------------------------------------------
 
 export function PosterCard({ series, progressEp, width }) {
@@ -199,6 +244,7 @@ export function PosterCard({ series, progressEp, width }) {
         <Box sx={{ position: 'absolute', inset: 0, borderRadius: 'inherit', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)' }} />
 
         {series.badge && <Badge sx={{ position: 'absolute', top: 8, left: 8 }}>{series.badge}</Badge>}
+        <PriceTag series={series} />
 
         <Box
           className="play"
@@ -299,6 +345,7 @@ export function RankCard({ series, rank }) {
       </Box>
       <Box className="poster" sx={{ position: 'relative', zIndex: 1, flex: 1, aspectRatio: '3 / 4', borderRadius: 2, overflow: 'hidden', bgcolor: C.surface2, boxShadow: '-12px 0 30px -8px rgba(0,0,0,0.9)' }}>
         <Box component="img" src={series.poster} alt={series.title} loading="lazy" sx={{ width: 1, height: 1, objectFit: 'cover' }} />
+        <PriceTag series={series} />
         <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent 55%)' }} />
         <Box sx={{ position: 'absolute', left: 8, right: 8, bottom: 8, fontSize: 13, fontWeight: 800, lineHeight: 1.25 }}>{series.title}</Box>
       </Box>

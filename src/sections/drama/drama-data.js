@@ -10,6 +10,9 @@ export const BRAND = '444 Кино';
 
 export const FREE_EPISODES = 10;
 
+// Кино тус бүрийн үндсэн үнэ (₮). Админд кино бүрээр өөрчилнө; 0 = тусдаа зарахгүй
+export const DEFAULT_PRICE = 5900;
+
 // Захиалгын багцууд. id нь supabase/schema.sql доторх нэртэй таарах ёстой.
 export const PLANS = [
   { id: 'week', name: '7 хоног', price: 3900, period: '7 хоног', note: 'Туршиж үзэхэд' },
@@ -232,6 +235,7 @@ export function fromDb(row) {
     episodes: row.episodes ?? 1,
     freeEpisodes: row.free_episodes ?? FREE_EPISODES,
     freeMinutes: row.free_minutes ?? 0,
+    price: row.price ?? DEFAULT_PRICE,
     published: row.published ?? true,
     videos: [],
   };
@@ -279,3 +283,9 @@ export const newSeries = (list = SERIES) => list.filter((s) => s.badge === 'Ши
 
 export const seriesByGenre = (genre, list = SERIES) =>
   genre === 'Бүгд' ? list : list.filter((s) => s.genres.includes(genre));
+
+// Тусдаа зарагдах уу: үнэтэй, бүтэн үнэгүй биш
+export const isForSale = (series) =>
+  !!series && (series.price ?? DEFAULT_PRICE) > 0 && (series.freeEpisodes ?? FREE_EPISODES) < (series.episodes ?? 1);
+
+export const priceOf = (series) => series?.price ?? DEFAULT_PRICE;

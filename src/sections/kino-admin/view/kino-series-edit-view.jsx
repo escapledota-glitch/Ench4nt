@@ -46,6 +46,7 @@ const EMPTY = {
   episodes: 20,
   free_episodes: 10,
   free_minutes: 0,
+  price: 5900,
   published: false,
   sort: 0,
 };
@@ -108,6 +109,7 @@ export function KinoSeriesEditView({ id }) {
         episodes: Math.max(1, Number(form.episodes) || 1),
         free_episodes: Math.max(0, Number(form.free_episodes) || 0),
         free_minutes: Math.max(0, Math.round(Number(form.free_minutes) || 0)),
+        price: Math.max(0, Math.round(Number(form.price) || 0)),
         published: !!form.published,
         sort: Number(form.sort) || 0,
       };
@@ -185,6 +187,8 @@ export function KinoSeriesEditView({ id }) {
             </Box>
 
             <FreeAccessCard form={form} set={set} />
+
+            <PriceCard form={form} set={set} />
 
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
               <TextField select label="Тэмдэг" value={form.badge} onChange={set('badge')}>
@@ -374,6 +378,43 @@ function FreeAccessCard({ form, set }) {
       <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
         Багцгүй үзэгчдэд: <b>{summary}</b>
       </Typography>
+    </Box>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Энэ киног тусдаа худалдаж авах үнэ
+
+const PRICE_PRESETS = [0, 3900, 5900, 7900, 9900];
+
+function PriceCard({ form, set }) {
+  const price = Number(form.price) || 0;
+  return (
+    <Box sx={{ p: 2.5, borderRadius: 1.5, border: (t) => `1px dashed ${t.vars.palette.divider}`, bgcolor: 'background.neutral' }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 2 }}>
+        <Iconify icon="solar:tag-price-bold-duotone" width={22} sx={{ color: 'warning.main' }} />
+        <Typography variant="subtitle1">Худалдах үнэ</Typography>
+      </Stack>
+      <TextField
+        label="Үнэ"
+        type="number"
+        value={form.price}
+        onChange={set('price')}
+        fullWidth
+        slotProps={{ htmlInput: { min: 0, step: 100 }, input: { endAdornment: <InputAdornment position="end">₮</InputAdornment> } }}
+        helperText="Багцгүй үзэгч зөвхөн энэ киног нэг удаа төлж бүтэн үзнэ. 0 = тусдаа зарахгүй (зөвхөн багцаар)."
+      />
+      <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
+        {PRICE_PRESETS.map((p) => (
+          <Chip
+            key={p}
+            label={p === 0 ? 'Зарахгүй' : `${p.toLocaleString('en-US')}₮`}
+            color={price === p ? 'primary' : 'default'}
+            variant={price === p ? 'filled' : 'outlined'}
+            onClick={() => set('price')(p)}
+          />
+        ))}
+      </Stack>
     </Box>
   );
 }

@@ -26,6 +26,8 @@ export function DramaMyView() {
 
   const watching = continueList.map((h) => ({ series: getSeries(h.id), ep: h.ep })).filter((h) => h.series);
   const savedList = saved.map((id) => getSeries(id)).filter(Boolean);
+  const { owned } = useDramaAuth();
+  const ownedList = owned.map((id) => getSeries(id)).filter(Boolean);
 
   return (
     <Box sx={{ maxWidth: 1280, mx: 'auto', px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 }, pb: 6 }}>
@@ -48,6 +50,17 @@ export function DramaMyView() {
           <Empty text="Та одоогоор юу ч үзээгүй байна." />
         )}
       </Box>
+
+      {ownedList.length > 0 && (
+        <Box sx={{ mt: 4 }}>
+          <SectionTitle title="Худалдаж авсан" subtitle="Хугацаагүй, хэдэн ч удаа үзнэ" />
+          <Box sx={grid}>
+            {ownedList.map((s) => (
+              <PosterCard key={s.id} series={s} />
+            ))}
+          </Box>
+        </Box>
+      )}
 
       <Box sx={{ mt: 4 }}>
         <SectionTitle title="Хадгалсан" />

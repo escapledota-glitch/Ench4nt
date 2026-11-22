@@ -7,13 +7,14 @@ import Drawer from '@mui/material/Drawer';
 
 import { RouterLink } from 'src/routes/components';
 
+import { BuyButton } from '../drama-buy';
 import { useDramaAuth } from '../drama-auth';
 import { isHls, KinoVideo } from '../drama-video';
 import { useDramaStore } from '../use-drama-store';
 import { C, Icon , NotFoundState } from '../drama-ui';
 import { useCatalog, useStreamUrl } from '../drama-catalog';
 import { usePictureBox, SubtitleOverlay } from '../drama-subtitles';
-import { freeLabel, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
+import { freeLabel, isForSale, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
 
 // ----------------------------------------------------------------------
 // Босоо бүтэн дэлгэцийн тоглуулагч.
@@ -25,7 +26,9 @@ export function DramaPlayerView({ id, initialEp }) {
   const { getSeries, loading: catalogLoading } = useCatalog();
   const series = getSeries(id);
   const { saved, toggleSaved, recordWatch } = useDramaStore();
-  const { user, isSubscribed, loading: authLoading } = useDramaAuth();
+  const { user, canWatch, loading: authLoading } = useDramaAuth();
+  // Үзэх эрх: багцтай ЭСВЭЛ энэ киног худалдаж авсан
+  const isSubscribed = series ? canWatch(series.id) : false;
 
   const videoRef = useRef(null);
   const touch = useRef(null);
@@ -620,14 +623,18 @@ export function DramaPlayerView({ id, initialEp }) {
                 </Box>
                 <Box sx={{ fontSize: 14, opacity: 0.8, maxWidth: 290, lineHeight: 1.6 }}>
                   {previewEnded
-                    ? 'Үргэлжлүүлэн үзэхийн тулд 444 Кино-гийн багц авна уу — бүх кино, цуврал бүтэн нээгдэнэ.'
-                    : `${freeLabel(series)}. Үргэлжлүүлэн үзэхийн тулд 444 Кино-гийн багц авна уу — бүх кино, цуврал нээгдэнэ.`}
+                    ? isForSale(series)
+                      ? 'Үргэлжлүүлэн үзэхийн тулд энэ киног худалдаж авах эсвэл багц аваарай.'
+                      : 'Үргэлжлүүлэн үзэхийн тулд 444 Кино-гийн багц авна уу — бүх кино, цуврал бүтэн нээгдэнэ.'
+                    : `${freeLabel(series)}. ${isForSale(series) ? 'Энэ киног худалдаж авах эсвэл багц аваарай.' : 'Үргэлжлүүлэн үзэхийн тулд 444 Кино-гийн багц авна уу.'}`}
                 </Box>
+                {/* Зөвхөн энэ киног авах */}
+                <BuyButton series={series} sx={{ mt: 1, borderRadius: 6, px: 3.5 }} />
                 <Box
                   component={RouterLink}
                   href={`/drama/plans?next=${backHere}`}
                   sx={{
-                    mt: 1,
+                    mt: isForSale(series) ? 0 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
@@ -641,7 +648,7 @@ export function DramaPlayerView({ id, initialEp }) {
                     textDecoration: 'none',
                   }}
                 >
-                  <Icon name="crown" size={20} /> Багц сонгох
+                  <Icon name="crown" size={20} /> {isForSale(series) ? 'Бүх кино — багц сонгох' : 'Багц сонгох'}
                 </Box>
                 {!user && (
                   <Box

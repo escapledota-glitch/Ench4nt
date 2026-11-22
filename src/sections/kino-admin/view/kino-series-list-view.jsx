@@ -119,6 +119,7 @@ export function KinoSeriesListView() {
                 <TableCell>Төрөл</TableCell>
                 <TableCell align="center">Анги</TableCell>
                 <TableCell align="center">Үнэгүй</TableCell>
+                <TableCell align="center">Үнэ</TableCell>
                 <TableCell align="center">Нийтлэгдсэн</TableCell>
                 <TableCell align="right" />
               </TableRow>
@@ -153,6 +154,17 @@ export function KinoSeriesListView() {
                   <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
                     {r.free_episodes} анги{r.free_minutes ? ` + ${r.free_minutes} мин` : ""}
                   </TableCell>
+                  <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
+                    {r.price > 0 ? (
+                      <Label color="warning" variant="soft">
+                        {Number(r.price).toLocaleString('en-US')}₮
+                      </Label>
+                    ) : (
+                      <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                        Зарахгүй
+                      </Typography>
+                    )}
+                  </TableCell>
                   <TableCell align="center">
                     <Switch checked={r.published} onChange={() => togglePublished(r)} />
                   </TableCell>
@@ -171,7 +183,7 @@ export function KinoSeriesListView() {
               ))}
               {rows !== null && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
                     Цуврал олдсонгүй
                   </TableCell>
                 </TableRow>

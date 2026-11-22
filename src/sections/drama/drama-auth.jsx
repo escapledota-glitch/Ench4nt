@@ -44,17 +44,47 @@ export function DramaAuthProvider({ children }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(!!supabase);
 
+  // Худалдаж авсан киноны id-ууд
+  const [owned, setOwned] = useState([]);
+
   const loadSubscription = useCallback(async (u) => {
     if (!supabase || !u) {
       setSubscription(null);
+      setOwned([]);
       return;
     }
-    const { data, error } = await supabase.from('subscriptions').select('*').eq('user_id', u.id).maybeSingle();
-    // Сүлжээний түр алдаа гарвал одоогийн багцыг хэвээр үлдээнэ
+    const [subRes, buyRes] = await Promise.all([
+      supabase.from('subscriptions').select('*').eq('user_id', u.id).maybeSingle(),
+      supabase.from('purchases').select('series_id'),
+    ]);
+    // Сүлжээний түр алдаа гарвал одоогийн төлөвийг хэвээр үлдээнэ
     // (үгүй бол үзэж байх үед багц "алга" болж видео/хадмал дахин ачаалагдана)
-    if (error) return;
-    setSubscription((prev) => (JSON.stringify(prev) === JSON.stringify(data ?? null) ? prev : (data ?? null)));
+    if (!subRes.error) {
+      const data = subRes.data ?? null;
+      setSubscription((prev) => (JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
+    }
+    if (!buyRes.error) {
+      const ids = (buyRes.data ?? []).map((r) => r.series_id).sort();
+      setOwned((prev) => (prev.join() === ids.join() ? prev : ids));
+    }
   }, []);
+
+  // Киног худалдаж авах (одоогоор туршилтын төлбөр)
+  const buySeries = useCallback(
+    async (seriesId) => {
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch('/api/kino/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session?.access_token}` },
+        body: JSON.stringify({ seriesId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Худалдан авалт амжилтгүй');
+      await loadSubscription(data.session?.user);
+      return body;
+    },
+    [loadSubscription]
+  );
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -116,6 +146,7 @@ export function DramaAuthProvider({ children }) {
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setSubscription(null);
+    setOwned([]);
   }, []);
 
   const startTestSubscription = useCallback(async (plan) => {
@@ -135,6 +166,11 @@ export function DramaAuthProvider({ children }) {
       displayName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
       subscription,
       isSubscribed,
+      owned,
+      // Энэ киног үзэх эрхтэй эсэх: багцтай эсвэл худалдаж авсан
+      owns: (seriesId) => owned.includes(seriesId),
+      canWatch: (seriesId) => isSubscribed || owned.includes(seriesId),
+      buySeries,
       signIn,
       signUp,
       signInWithProvider,
@@ -143,7 +179,7 @@ export function DramaAuthProvider({ children }) {
       signOut,
       startTestSubscription,
     };
-  }, [loading, user, subscription, signIn, signUp, signInWithProvider, resetPassword, updatePassword, signOut, startTestSubscription]);
+  }, [loading, user, subscription, owned, buySeries, signIn, signUp, signInWithProvider, resetPassword, updatePassword, signOut, startTestSubscription]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

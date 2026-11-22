@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 
 import { RouterLink } from 'src/routes/components';
 
+import { BuyButton } from '../drama-buy';
 import { useDramaAuth } from '../drama-auth';
 import { useCatalog } from '../drama-catalog';
 import { useDramaStore } from '../use-drama-store';
@@ -20,10 +21,12 @@ export function DramaSeriesView({ id }) {
   const { series: SERIES, loading, getSeries } = useCatalog();
   const series = getSeries(id);
   const { history, saved, toggleSaved } = useDramaStore();
-  const { isSubscribed } = useDramaAuth();
+  const { canWatch } = useDramaAuth();
   const [range, setRange] = useState(0);
 
   if (!series) return loading ? null : <NotFoundState />;
+  // Үзэх эрх: багцтай эсвэл худалдаж авсан
+  const isSubscribed = canWatch(series.id);
 
   const lastEp = history[series.id]?.ep;
   const isSaved = saved.includes(series.id);
@@ -115,6 +118,13 @@ export function DramaSeriesView({ id }) {
               <PlayButton series={series} lastEp={lastEp} />
               <SaveButton saved={isSaved} onClick={() => toggleSaved(series.id)} />
             </Box>
+            {/* Энэ киног тусдаа худалдаж авах (багцгүй, аваагүй үед л) */}
+            <BuyButton series={series} sx={{ mt: 1.5, width: { xs: 1, sm: 'auto' } }} />
+            {isSubscribed && !isFreeEpisode(series.episodes, series) && (
+              <Box sx={{ mt: 1.5, fontSize: 13, color: '#4ade80', display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                <Icon name="check" size={16} /> Та үзэх эрхтэй
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>

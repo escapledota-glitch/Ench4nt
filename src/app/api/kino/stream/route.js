@@ -51,19 +51,25 @@ async function subtitlesFor(d, seriesId, ep) {
   }
 }
 
-// Хэрэглэгч багцтай эсэх — хэрэглэгчийн өөрийн токеноор нэг удаагийн хүсэлт
-// (RLS "read own subscription" нь зөвхөн өөрийнх нь мөрийг өгнө; токеныг Supabase шалгана)
-async function isSubscribed(token) {
-  if (!token) return false;
+// Хэрэглэгч багцтай эсвэл энэ киног худалдаж авсан эсэх — хэрэглэгчийн өөрийн
+// токеноор (RLS нь зөвхөн өөрийнх нь мөрийг өгнө; токеныг Supabase шалгана). Зэрэг.
+async function viewerAccess(token, seriesId) {
+  if (!token) return { subscribed: false, owned: false };
   try {
     const userDb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: `Bearer ${token}` } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data } = await userDb.from('subscriptions').select('status, expires_at').maybeSingle();
-    return !!data && data.status === 'active' && new Date(data.expires_at) > new Date();
+    const [{ data: sub }, { data: bought }] = await Promise.all([
+      userDb.from('subscriptions').select('status, expires_at').maybeSingle(),
+      userDb.from('purchases').select('series_id').eq('series_id', seriesId).maybeSingle(),
+    ]);
+    return {
+      subscribed: !!sub && sub.status === 'active' && new Date(sub.expires_at) > new Date(),
+      owned: !!bought,
+    };
   } catch {
-    return false;
+    return { subscribed: false, owned: false };
   }
 }
 
@@ -88,7 +94,7 @@ export async function POST(request) {
 
   // Бүх шалгалтыг ЗЭРЭГ хийнэ (дараалан хийвэл сервер ↔ өгөгдлийн сан хооронд
   // олон удаа явж, видео эхлэх нь хэдэн секундээр удааширдаг байсан)
-  const [epRes, subs, subscribed] = await Promise.all([
+  const [epRes, subs, access] = await Promise.all([
     d
       .from('episodes')
       .select('video_url, series!inner(published, episodes, free_episodes, free_minutes)')
@@ -96,7 +102,7 @@ export async function POST(request) {
       .eq('ep', ep)
       .maybeSingle(),
     subtitlesFor(d, seriesId, ep),
-    isSubscribed(token),
+    viewerAccess(token, seriesId),
   ]);
 
   const row = epRes.data;
@@ -107,7 +113,7 @@ export async function POST(request) {
   const freeEpisode = ep <= series.free_episodes;
   const previewSeconds = Math.max(0, series.free_minutes || 0) * 60;
 
-  if (subscribed || freeEpisode) {
+  if (access.subscribed || access.owned || freeEpisode) {
     const s = signBunnyUrl(row.video_url, FULL_TTL);
     return json({ url: s.url, mode: 'full', expires: s.expires, ...subs });
   }

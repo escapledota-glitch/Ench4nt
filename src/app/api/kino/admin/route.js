@@ -34,8 +34,12 @@ const ACTIONS = {
     const { count: series } = await d.from('series').select('id', { count: 'exact', head: true });
     const { count: push } = await d.from('push_subscriptions').select('endpoint', { count: 'exact', head: true });
     const watching = must(await d.from('watch_history').select('user_id').gt('updated_at', weekAgo));
+    const sales = must(await d.from('purchases').select('price, created_at'));
 
     return {
+      purchases: sales.length,
+      purchases_revenue: sales.reduce((s, r) => s + (r.price || 0), 0),
+      purchases_7d: sales.filter((r) => r.created_at > weekAgo).length,
       users: users.length,
       users_7d: users.filter((u) => u.created_at > weekAgo).length,
       active: active.length,

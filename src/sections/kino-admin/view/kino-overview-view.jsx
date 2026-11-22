@@ -95,6 +95,13 @@ export function KinoOverviewView() {
         <StatCard title="Нийт хэрэглэгч" value={stats?.users ?? '—'} sub={stats ? `Сүүлийн 7 хоногт +${stats.users_7d}` : ''} icon="solar:users-group-rounded-bold-duotone" />
         <StatCard title="Идэвхтэй багц" value={stats?.active ?? '—'} sub={stats?.users ? `Хэрэглэгчдийн ${Math.round((totalActive / stats.users) * 100)}%` : ''} icon="solar:crown-bold-duotone" color="warning" />
         <StatCard title="Сарын орлого (тооцоо)" value={stats ? formatPrice(Math.round(mrr)) : '—'} sub="Идэвхтэй багцаас тооцсон" icon="solar:wallet-money-bold-duotone" color="success" />
+        <StatCard
+          title="Худалдаж авсан кино"
+          value={stats ? formatPrice(stats.purchases_revenue ?? 0) : '—'}
+          sub={stats ? `${stats.purchases ?? 0} худалдан авалт · 7 хоногт +${stats.purchases_7d ?? 0}` : ''}
+          icon="solar:tag-price-bold-duotone"
+          color="warning"
+        />
         <StatCard title="Цуврал" value={stats?.series ?? '—'} icon="solar:clapperboard-play-bold-duotone" color="secondary" />
         <StatCard title="7 хоногт үзсэн хэрэглэгч" value={stats?.watching_7d ?? '—'} icon="solar:play-circle-bold-duotone" color="info" />
         <StatCard title="Мэдэгдэл авдаг төхөөрөмж" value={stats?.push ?? '—'} icon="solar:bell-bing-bold-duotone" color="error" />
