@@ -13,6 +13,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { Iconify } from 'src/components/iconify';
 
+import { FrameStrip } from './kino-frame-strip';
 import { errorText, saveSubtitleStyle } from './kino-api';
 import { StyleControls } from './view/kino-subtitles-card';
 
@@ -23,7 +24,7 @@ import { StyleControls } from './view/kino-subtitles-card';
 
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-export default function KinoEditPanel({ seriesId, style, onChange, dragTarget, onDragTarget, videoRef, time, duration, paused, onExit }) {
+export default function KinoEditPanel({ seriesId, style, onChange, dragTarget, onDragTarget, videoRef, time, duration, paused, onExit, cueUrl }) {
   const [open, setOpen] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -118,6 +119,10 @@ export default function KinoEditPanel({ seriesId, style, onChange, dragTarget, o
             <ToggleButton value="none">Чирэхгүй</ToggleButton>
           </ToggleButtonGroup>
         </Stack>
+        {/* Хадмалтай мөчүүдийн кадрууд — дарахад тэр кадр руу үсэрнэ */}
+        <Box sx={{ mt: 0.75 }}>
+          <FrameStrip videoRef={videoRef} cueUrl={cueUrl} duration={duration} />
+        </Box>
         {msg && (
           <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: msg.startsWith('✓') ? 'success.main' : 'error.main' }}>
             {msg}

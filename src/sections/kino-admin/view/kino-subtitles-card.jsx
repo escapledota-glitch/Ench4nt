@@ -26,6 +26,7 @@ import { Iconify } from 'src/components/iconify';
 import { KinoVideo } from 'src/sections/drama/drama-video';
 import { useCues, CoverMask, SubtitleText, usePictureBox, SubtitleLayers } from 'src/sections/drama/drama-subtitles';
 
+import { FrameStrip } from '../kino-frame-strip';
 import { errorText, previewVideo, listSubtitles, deleteSubtitle, uploadSubtitle, getSubtitleStyle, saveSubtitleStyle } from '../kino-api';
 
 // ----------------------------------------------------------------------
@@ -100,7 +101,7 @@ export function KinoSubtitlesCard({ seriesId, total, poster }) {
         Анги бүрт .srt эсвэл .vtt файл оруулна. Байрлал, хэмжээг та тохируулна — үзэгчид өөрчлөх боломжгүй.
       </Typography>
 
-      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 300px' }, alignItems: 'start' }}>
+      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 320px' }, alignItems: 'start' }}>
         {/* Зүүн: файлууд + тохиргоо */}
         <Stack spacing={3}>
           <UploadRow seriesId={seriesId} total={total} onDone={load} />
@@ -155,7 +156,11 @@ export function KinoSubtitlesCard({ seriesId, total, poster }) {
         </Stack>
 
         {/* Баруун: урьдчилан харах */}
-        {style && <Preview seriesId={seriesId} subs={subs} style={style} poster={poster} onMove={setStyle} />}
+        {style && (
+          <Box sx={{ order: { xs: -1, md: 0 }, alignSelf: 'start', position: 'sticky', top: { xs: 64, md: 84 }, zIndex: 5 }}>
+            <Preview seriesId={seriesId} subs={subs} style={style} poster={poster} onMove={setStyle} />
+          </Box>
+        )}
       </Box>
     </Card>
   );
@@ -493,7 +498,14 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
   const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
   return (
-    <Box sx={{ position: { md: 'sticky' }, top: { md: 90 } }}>
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        p: { xs: 1, md: 0 },
+        boxShadow: { xs: '0 8px 24px rgba(0,0,0,0.18)', md: 'none' },
+      }}
+    >
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
         <Typography variant="subtitle2">Урьдчилан харах</Typography>
         <ToggleButtonGroup size="small" exclusive value={dragWhat} onChange={(_e, v) => v && setDragWhat(v)}>
@@ -510,7 +522,8 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
           containerType: 'inline-size',
           position: 'relative',
           width: 1,
-          maxWidth: 300,
+          maxWidth: { xs: 190, md: 300 },
+          mx: { xs: 'auto', md: 0 },
           aspectRatio: '9 / 16',
           borderRadius: 2,
           overflow: 'hidden',
@@ -541,10 +554,10 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
 
         {video?.url ? (
           // Тоглуулагчтай яг ижил: хаалт (хадмалтай үед/үргэлж) + хадмал
-          <SubtitleLayers videoRef={videoRef} url={subUrl} style={style} box={pictureBox} />
+          <SubtitleLayers videoRef={videoRef} url={subUrl} style={style} box={pictureBox} editing />
         ) : (
           <>
-            <CoverMask style={style} box={pictureBox} />
+            <CoverMask style={style} box={pictureBox} guide={!!style.mask?.on} />
             <SubtitleText text={sample} style={style} />
           </>
         )}
@@ -584,6 +597,11 @@ function Preview({ seriesId, subs, style, poster, onMove }) {
             {fmt(time)} / {fmt(duration)}
           </Typography>
         </Stack>
+      )}
+      {video?.url && (
+        <Box sx={{ mt: 1, maxWidth: 320 }}>
+          <FrameStrip videoRef={videoRef} cueUrl={subUrl} duration={duration} />
+        </Box>
       )}
       <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary', maxWidth: 300 }}>
         {video?.url

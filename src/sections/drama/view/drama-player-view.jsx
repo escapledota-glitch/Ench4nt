@@ -526,6 +526,7 @@ export function DramaPlayerView({ id, initialEp }) {
             url={stream.subtitles?.[0]?.url || null}
             style={activeStyle}
             box={pictureBox}
+            editing={editing}
           />
         )}
 
@@ -909,6 +910,7 @@ export function DramaPlayerView({ id, initialEp }) {
             time={time}
             duration={duration}
             paused={paused}
+            cueUrl={stream.subtitles?.[0]?.url || null}
             onExit={() => {
               window.location.href = `/dashboard/kino/series/${series.id}/`;
             }}

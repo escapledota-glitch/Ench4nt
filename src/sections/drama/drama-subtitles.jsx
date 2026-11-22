@@ -169,6 +169,18 @@ function PictureLayer({ box, children }) {
   );
 }
 
+// Хадмал гарч буй мөчүүд (кино даяар жигд тараасан) — тааруулахдаа тэр кадр руу үсрэхэд
+export function pickCueMoments(cues, n = 10) {
+  const long = cues.filter((c) => c.end - c.start >= 1);
+  if (!long.length) return [];
+  const step = Math.max(1, Math.floor(long.length / n));
+  const out = [];
+  for (let i = 0; i < long.length && out.length < n; i += step) {
+    out.push(+(long[i].start + Math.min(0.6, (long[i].end - long[i].start) / 2)).toFixed(2));
+  }
+  return out;
+}
+
 // ----------------------------------------------------------------------
 // "Зөвхөн цагаан бичгийг бүдгэрүүлэх": туузны доторх цагаан пикселүүдийг олж,
 // эргэн тойрных нь (цагаан биш) зургийн өнгөөр бөглөнө. Бусад хэсэг тод хэвээр.
@@ -331,7 +343,7 @@ function SmartTextBlur({ videoRef, mask, active, onFail }) {
 // ----------------------------------------------------------------------
 // Эх видеон дээр шатаагдсан хуучин хадмалыг нуух хаалт.
 // visible: одоо харуулах эсэх (timing = 'subs' үед манай хадмалтай зэрэг)
-export function CoverMask({ style, box, visible = true, videoRef }) {
+export function CoverMask({ style, box, visible = true, videoRef, guide = false }) {
   const m = { ...DEFAULT_SUB_MASK, ...(style?.mask || {}) };
   const [smartFailed, setSmartFailed] = useState(false);
   const onFail = useCallback(() => setSmartFailed(true), []);
@@ -353,7 +365,7 @@ export function CoverMask({ style, box, visible = true, videoRef }) {
           height: `${m.h}%`,
           transform: 'translate(-50%, -50%)',
           pointerEvents: 'none',
-          opacity: visible ? 1 : 0,
+          opacity: visible || guide ? 1 : 0,
           transition: 'opacity 140ms ease',
           ...(!smart && {
             bgcolor: rgba(m.color, m.opacity),
@@ -366,6 +378,26 @@ export function CoverMask({ style, box, visible = true, videoRef }) {
         }}
       >
         {smart && <SmartTextBlur videoRef={videoRef} mask={m} active={visible} onFail={onFail} />}
+        {/* Тааруулах үед: хаалтын хүрээг үргэлж харуулна */}
+        {guide && (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              border: '2px dashed #facc15',
+              borderRadius: '4px',
+              boxShadow: '0 0 0 1px rgba(0,0,0,0.6)',
+              pointerEvents: 'none',
+            }}
+          >
+            <Box
+              component="span"
+              sx={{ position: 'absolute', left: 4, top: -18, px: 0.6, fontSize: 10, fontWeight: 700, color: '#1a1200', bgcolor: '#facc15', borderRadius: 0.5 }}
+            >
+              {smart ? 'Бичиг бүдгэрүүлэх хэсэг' : 'Хаалт тууз'}
+            </Box>
+          </Box>
+        )}
       </Box>
     </PictureLayer>
   );
@@ -374,18 +406,19 @@ export function CoverMask({ style, box, visible = true, videoRef }) {
 // ----------------------------------------------------------------------
 // Тоглуулагч (болон админы урьдчилан харах): хаалт + хадмал, видеоны цагийг дагана.
 // box: видеоны зураг дэлгэц дээр яг хаана байгаа ({ left, top, width, height } px).
-export function SubtitleLayers({ videoRef, url, style, box, showText = true }) {
+export function SubtitleLayers({ videoRef, url, style, box, showText = true, editing = false }) {
   const cues = useCues(url);
   const m = { ...DEFAULT_SUB_MASK, ...(style?.mask || {}) };
   const delay = Number(style?.delay) || 0;
   const { text, near } = useCueState(videoRef, cues, delay, m.mode === 'smart' || m.timing === 'subs' ? m.pad : 0);
   // "Зөвхөн бичиг" горимд манай хадмал гарах үед л ажиллана (бусад үед киноны цагаан зүйлд хүрэхгүй)
   const timing = m.mode === 'smart' ? 'subs' : m.timing;
-  const maskVisible = m.on && (timing === 'always' || !cues.length || near);
+  // Тааруулах үед эффектийг үргэлж харуулна (зогсоосон кадр дээр үр дүнг харахын тулд)
+  const maskVisible = m.on && (editing || timing === 'always' || !cues.length || near);
 
   return (
     <>
-      <CoverMask style={style} box={box} visible={maskVisible} videoRef={videoRef} />
+      <CoverMask style={style} box={box} visible={maskVisible} videoRef={videoRef} guide={editing && m.on} />
       {showText &&
         (box ? (
           // Хэвтээ байрлал: дэлгэц дээр харагдаж буй хэсэгт (зураг хажуугаараа тайрагдсан бол)
