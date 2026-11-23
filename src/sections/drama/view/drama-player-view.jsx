@@ -764,7 +764,8 @@ export function DramaPlayerView({ id, initialEp }) {
             position: 'absolute',
             right: 8,
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
-            display: 'flex',
+            // Түгжээтэй дэлгэц дээр сонголтуудыг таглахгүйн тулд нууна
+            display: showPaywall && !authLoading ? 'none' : 'flex',
             flexDirection: 'column',
             gap: 2,
           }}
