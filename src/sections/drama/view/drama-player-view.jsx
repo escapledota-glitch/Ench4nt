@@ -778,10 +778,10 @@ export function DramaPlayerView({ id, initialEp }) {
           <NavArrow disabled={ep >= total} onClick={() => goTo(ep + 1)} />
         </Box>
 
-        {/* Доод хэсэг */}
+        {/* Доод хэсэг — товчнууд нуугдсан ч явцын мөр нимгэн шугам болж үлдэнэ, шууд барьж чирнэ */}
         <Box
           sx={{
-            ...fade,
+            pointerEvents: 'none',
             position: 'absolute',
             left: 0,
             right: 0,
@@ -791,7 +791,7 @@ export function DramaPlayerView({ id, initialEp }) {
           }}
         >
           {/* Түгжээтэй дэлгэц дээр гарчиг, явцын мөрийг нууна (сонголтуудад зай гаргана) */}
-          <Box sx={{ pr: 7, mb: 1.5, display: showPaywall && !authLoading ? 'none' : 'block' }}>
+          <Box sx={{ ...fade, pr: 7, mb: 1.5, display: showPaywall && !authLoading ? 'none' : 'block' }}>
             <Box sx={{ fontWeight: 800, fontSize: 16 }}>
               {isMovie ? series.title : `${series.title} · ${ep}-р анги`}
             </Box>
@@ -816,7 +816,8 @@ export function DramaPlayerView({ id, initialEp }) {
             progress={progress}
             duration={partDur}
             disabled={locked}
-            hidden={showPaywall && !authLoading}
+            hidden={(showPaywall && !authLoading) || editing}
+            compact={!ui}
             onScrub={showUi}
             onSeek={(p) => {
               const v = videoRef.current;
@@ -829,7 +830,7 @@ export function DramaPlayerView({ id, initialEp }) {
           />
 
           {/* Хугацаа ба бүтэн дэлгэц */}
-          <Box sx={{ display: showPaywall && !authLoading ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', mt: -0.25 }}>
+          <Box sx={{ ...fade, display: showPaywall && !authLoading ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', mt: -0.25 }}>
             <Box sx={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums', opacity: 0.9 }}>
               {formatTime(partTime)} <Box component="span" sx={{ opacity: 0.6 }}>/ {partDur ? formatTime(partDur) : '--:--'}</Box>
             </Box>
@@ -848,6 +849,7 @@ export function DramaPlayerView({ id, initialEp }) {
             component="button"
             onClick={() => setListOpen(true)}
             sx={{
+              ...fade,
               display: isMovie ? 'none' : 'flex',
               mt: 0.5,
               width: 1,
@@ -1346,7 +1348,7 @@ function EpisodeSheet({ open, onClose, series, current, isSubscribed, onPick }) 
 // видео 0.2 сек тутам шинэчлэгдэж, хуруугаа авахад яг тэр цэг рүү очно.
 // ----------------------------------------------------------------------
 
-function Scrubber({ progress, duration, disabled, hidden, onSeek, onScrub }) {
+function Scrubber({ progress, duration, disabled, hidden, compact, onSeek, onScrub }) {
   const ref = useRef(null);
   const [drag, setDrag] = useState(null); // 0..1 чирж байх үед
   const lastSeek = useRef(0);
@@ -1359,15 +1361,26 @@ function Scrubber({ progress, duration, disabled, hidden, onSeek, onScrub }) {
   };
   const stop = (e) => e.stopPropagation();
 
+  // Товчнууд нуугдсан (нимгэн шугам) үед энгийн товшилт зөвхөн товчнуудыг гаргана —
+  // санамсаргүй үсрэхгүй. Хуруугаа хажуу тийш гулсуулж эхэлмэгц чирэлт эхэлнэ.
+  const pendingX = useRef(null);
+
+  const begin = (x) => {
+    dragging.current = true;
+    pendingX.current = null;
+    setDrag(at(x));
+  };
+
   const onDown = (e) => {
     if (disabled) return;
     e.stopPropagation();
     ref.current?.setPointerCapture?.(e.pointerId);
-    dragging.current = true;
-    setDrag(at(e.clientX));
     onScrub?.();
+    if (compact) pendingX.current = e.clientX;
+    else begin(e.clientX);
   };
   const onMove = (e) => {
+    if (pendingX.current !== null && Math.abs(e.clientX - pendingX.current) > 6) begin(e.clientX);
     if (!dragging.current) return;
     e.stopPropagation();
     const p = at(e.clientX);
@@ -1380,6 +1393,7 @@ function Scrubber({ progress, duration, disabled, hidden, onSeek, onScrub }) {
     }
   };
   const onUp = (e) => {
+    pendingX.current = null;
     if (!dragging.current) return;
     dragging.current = false;
     e.stopPropagation();
@@ -1390,6 +1404,8 @@ function Scrubber({ progress, duration, disabled, hidden, onSeek, onScrub }) {
   const shown = drag ?? progress;
   const pct = `${shown * 100}%`;
   const active = drag !== null;
+  // товчнууд нуугдсан үед: зөвхөн нимгэн шугам (бариулгүй), гэхдээ дарж чирч болно
+  const thin = compact && !active;
 
   return (
     <Box
@@ -1410,6 +1426,7 @@ function Scrubber({ progress, duration, disabled, hidden, onSeek, onScrub }) {
       sx={{
         position: 'relative',
         display: hidden ? 'none' : 'block',
+        pointerEvents: 'auto',
         height: 40,
         mt: -0.5,
         mb: -0.75,
@@ -1426,10 +1443,10 @@ function Scrubber({ progress, duration, disabled, hidden, onSeek, onScrub }) {
           left: 0,
           right: 0,
           top: '50%',
-          height: active ? 7 : 4,
+          height: active ? 7 : thin ? 3 : 4,
           transform: 'translateY(-50%)',
           borderRadius: 4,
-          bgcolor: 'rgba(255,255,255,0.28)',
+          bgcolor: thin ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.28)',
           overflow: 'hidden',
           transition: 'height 120ms ease',
         }}
@@ -1448,7 +1465,8 @@ function Scrubber({ progress, duration, disabled, hidden, onSeek, onScrub }) {
           borderRadius: '50%',
           bgcolor: '#fff',
           boxShadow: active ? '0 0 0 6px rgba(236,72,153,0.35), 0 2px 8px rgba(0,0,0,0.5)' : '0 1px 4px rgba(0,0,0,0.5)',
-          transition: 'width 120ms ease, height 120ms ease, box-shadow 120ms ease',
+          transition: 'width 120ms ease, height 120ms ease, box-shadow 120ms ease, opacity 200ms ease',
+          opacity: thin ? 0 : 1,
           pointerEvents: 'none',
         }}
       />
