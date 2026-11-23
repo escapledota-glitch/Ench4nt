@@ -135,10 +135,16 @@ export async function POST(request) {
   let subtitleInfo = subs;
   if (part.start && !subs.subtitles?.length) {
     const { data: all } = await d.from('episodes').select('ep, video_url').eq('series_id', seriesId).order('ep');
-    const src = (all ?? []).find((r) => r.ep !== ep && parsePart(r.video_url).base === part.base);
-    if (src) {
-      const other = await subtitlesFor(d, seriesId, src.ep);
-      if (other.subtitles?.length) subtitleInfo = { ...other, subtitleStyle: subs.subtitleStyle ?? other.subtitleStyle };
+    // Эхлээд ижил бүтэн видеотой анги, дараа нь 1-р анги (тусдаа богино видео ч бүтэн киноны эхлэлтэй ижил цагтай)
+    const same = (all ?? []).filter((r) => r.ep !== ep && parsePart(r.video_url).base === part.base).map((r) => r.ep);
+    const candidates = [...new Set([...same, 1])].filter((n) => n !== ep);
+    for (const n of candidates) {
+       
+      const other = await subtitlesFor(d, seriesId, n);
+      if (other.subtitles?.length) {
+        subtitleInfo = { ...other, subtitleStyle: subs.subtitleStyle ?? other.subtitleStyle };
+        break;
+      }
     }
   }
 

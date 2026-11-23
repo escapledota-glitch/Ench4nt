@@ -173,42 +173,83 @@ export function BuyDialog({ series, open, onClose, onBought }) {
 }
 
 // ----------------------------------------------------------------------
-// Түгжээтэй ангийн дэлгэц дээрх сонголтууд: 7 хоног, 1 сар, энэ киног худалдаж авах
+// Түгжээтэй ангийн дэлгэц дээрх сонголтууд: 7 хоног (хямдрал), 1 сар, энэ киног худалдаж авах
 // ----------------------------------------------------------------------
 
-function OfferRow({ emoji, title, text, price, was, highlight, ...props }) {
+const perDay = (price, days) => `${Math.round(price / days).toLocaleString('en-US')}₮`;
+
+function OfferCard({ icon, tile, title, text, note, price, was, tag, tagBg, hero, ...props }) {
   return (
     <Box
       {...props}
       sx={{
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
-        gap: 1.25,
+        gap: 1.5,
         width: 1,
-        p: 1.25,
-        pr: 1.5,
-        border: '1px solid',
-        borderColor: highlight ? 'rgba(251,191,36,0.7)' : 'rgba(255,255,255,0.16)',
-        borderRadius: 2,
-        bgcolor: highlight ? 'rgba(251,191,36,0.10)' : 'rgba(255,255,255,0.06)',
+        p: 1.5,
+        pr: 1.75,
+        border: hero ? '1.5px solid transparent' : '1px solid rgba(255,255,255,0.14)',
+        borderRadius: 2.5,
+        // онцлох карт: ягаан-нил градиент хүрээ + гэрэлтэлт
+        background: hero
+          ? 'linear-gradient(#1a1024, #1a1024) padding-box, linear-gradient(135deg, #fbbf24, #ec4899 50%, #a855f7) border-box'
+          : 'rgba(255,255,255,0.06)',
+        boxShadow: hero ? '0 12px 40px -12px rgba(236,72,153,0.65)' : 'none',
         color: '#fff',
         fontFamily: 'inherit',
         textAlign: 'left',
         textDecoration: 'none',
         cursor: 'pointer',
-        transition: 'transform 120ms ease, background-color 120ms ease',
-        '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+        transition: 'transform 120ms ease',
+        '&:hover': { transform: 'translateY(-1px)' },
         '&:active': { transform: 'scale(0.98)' },
       }}
     >
-      <Box sx={{ fontSize: 24, lineHeight: 1, flexShrink: 0 }}>{emoji}</Box>
+      {tag && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -10,
+            left: 14,
+            px: 1,
+            py: 0.25,
+            borderRadius: 1,
+            background: tagBg,
+            color: '#fff',
+            fontSize: 10.5,
+            fontWeight: 800,
+            letterSpacing: 0.4,
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+          }}
+        >
+          {tag}
+        </Box>
+      )}
+      <Box
+        sx={{
+          width: 44,
+          height: 44,
+          flexShrink: 0,
+          borderRadius: 1.5,
+          display: 'grid',
+          placeItems: 'center',
+          background: tile,
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25)',
+        }}
+      >
+        <Icon name={icon} size={24} />
+      </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box sx={{ fontWeight: 800, fontSize: 15 }}>{title}</Box>
-        <Box sx={{ fontSize: 12, opacity: 0.75, lineHeight: 1.4 }}>{text}</Box>
+        <Box sx={{ fontWeight: 800, fontSize: 15.5, lineHeight: 1.25 }}>{title}</Box>
+        <Box sx={{ fontSize: 12, opacity: 0.72, lineHeight: 1.35, mt: 0.25 }}>{text}</Box>
+        {note && <Box sx={{ fontSize: 11.5, fontWeight: 700, color: C.gold, mt: 0.4 }}>{note}</Box>}
       </Box>
       <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-        {was && <Box sx={{ fontSize: 11, opacity: 0.55, textDecoration: 'line-through' }}>{formatPrice(was)}</Box>}
-        <Box sx={{ fontWeight: 800, fontSize: 15, color: C.gold }}>{formatPrice(price)}</Box>
+        {was && <Box sx={{ fontSize: 12, opacity: 0.5, textDecoration: 'line-through', lineHeight: 1.2 }}>{formatPrice(was)}</Box>}
+        <Box sx={{ fontWeight: 900, fontSize: hero ? 20 : 16, color: hero ? '#fff' : C.gold, lineHeight: 1.2 }}>{formatPrice(price)}</Box>
       </Box>
     </Box>
   );
@@ -220,39 +261,49 @@ export function PaywallOffers({ series, backHere }) {
   const week = PLANS.find((p) => p.id === 'week');
   const month = PLANS.find((p) => p.id === 'month');
   const canBuy = isForSale(series) && !canWatch(series.id);
+  const off = week?.was ? Math.round((1 - week.price / week.was) * 100) : 0;
 
   return (
-    <Box sx={{ width: 1, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Box sx={{ fontSize: 13, opacity: 0.7, textAlign: 'left', mb: 0.25 }}>Танд дараах багцуудыг санал болгож байна:</Box>
+    <Box sx={{ width: 1, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 1.75, mt: 0.5 }}>
+      <Box sx={{ fontSize: 13, opacity: 0.7, textAlign: 'center', mb: 0.5 }}>Танд дараах багцуудыг санал болгож байна:</Box>
       {week && (
-        <OfferRow
+        <OfferCard
           component={RouterLink}
           href={`/drama/plans?plan=week&next=${backHere}`}
-          emoji="📅"
+          hero
+          tag={off ? `🔥 ${off}% хямдрал` : '🔥 Хямдрал'}
+          tagBg="linear-gradient(90deg, #ef4444, #ec4899)"
+          icon="fire"
+          tile="linear-gradient(135deg, #f97316, #ec4899)"
           title="7 хоногийн багц"
           text="7 хоногийн турш бүх кино үнэгүй"
+          note={`Өдөрт ердөө ${perDay(week.price, 7)}`}
           price={week.price}
           was={week.was}
-          highlight
         />
       )}
       {month && (
-        <OfferRow
+        <OfferCard
           component={RouterLink}
           href={`/drama/plans?plan=month&next=${backHere}`}
-          emoji="📆"
+          tag="⭐ Хамгийн ашигтай"
+          tagBg={C.grad}
+          icon="crown"
+          tile="linear-gradient(135deg, #fbbf24, #f59e0b)"
           title="1 сарын багц"
           text="Бүтэн сарын турш бүх кино үнэгүй"
+          note={`Өдөрт ${perDay(month.price, 30)}`}
           price={month.price}
         />
       )}
       {canBuy && (
         <>
-          <OfferRow
+          <OfferCard
             component="button"
             type="button"
             onClick={() => setOpen(true)}
-            emoji="🎥"
+            icon="play"
+            tile="linear-gradient(135deg, #6366f1, #a855f7)"
             title="Кино худалдан авах"
             text={`Сонгосон киногоо тусад нь ${priceOf(series).toLocaleString('en-US')} төгрөгөөр худалдан авч үзэх боломжтой`}
             price={priceOf(series)}

@@ -734,14 +734,7 @@ export function DramaPlayerView({ id, initialEp }) {
                 <Box sx={{ width: 64, height: 64, borderRadius: '50%', background: C.grad, display: 'grid', placeItems: 'center' }}>
                   <Icon name="crown" size={30} />
                 </Box>
-                <Box sx={{ fontSize: 20, fontWeight: 800 }}>
-                  {previewEnded
-                    ? `Үнэгүй ${Math.round(previewLimit / 60)} минут дууслаа`
-                    : isMovie
-                      ? 'Энэ кино захиалгатай'
-                      : `${ep}-р ангиас эхлэн захиалгатай`}
-                </Box>
-                <Box sx={{ fontSize: 14, opacity: 0.85, maxWidth: 320, lineHeight: 1.6 }}>
+                <Box sx={{ fontSize: 19, fontWeight: 800, maxWidth: 330, lineHeight: 1.45 }}>
                   Киногоо үргэлжлүүлэн үзэхийг хүсвэл доорх сонголтуудаас өөрт тохирох эрхээ сонгоорой.
                 </Box>
                 {/* 7 хоног / 1 сар / энэ киног худалдаж авах */}
