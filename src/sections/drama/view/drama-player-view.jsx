@@ -725,16 +725,16 @@ export function DramaPlayerView({ id, initialEp }) {
               alignItems: 'center',
               justifyContent: 'center',
               textAlign: 'center',
-              px: 4,
+              px: 3,
+              // доод талын гарчиг/явцын мөрийг таглахгүйн тулд дээш шахна
+              pb: 'calc(env(safe-area-inset-bottom, 0px) + 84px)',
+              pt: 7,
               gap: 1.5,
             }}
           >
             {authLoading ? null : (
               <>
-                <Box sx={{ width: 64, height: 64, borderRadius: '50%', background: C.grad, display: 'grid', placeItems: 'center' }}>
-                  <Icon name="crown" size={30} />
-                </Box>
-                <Box sx={{ fontSize: 19, fontWeight: 800, maxWidth: 330, lineHeight: 1.45 }}>
+                <Box sx={{ fontSize: 19, fontWeight: 800, maxWidth: 330, lineHeight: 1.45, '@media (max-height: 700px)': { fontSize: 16.5, lineHeight: 1.35 } }}>
                   Киногоо үргэлжлүүлэн үзэхийг хүсвэл доорх сонголтуудаас өөрт тохирох эрхээ сонгоорой.
                 </Box>
                 {/* 7 хоног / 1 сар / энэ киног худалдаж авах */}
@@ -790,7 +790,8 @@ export function DramaPlayerView({ id, initialEp }) {
             pb: 'calc(env(safe-area-inset-bottom, 0px) + 14px)',
           }}
         >
-          <Box sx={{ pr: 7, mb: 1.5 }}>
+          {/* Түгжээтэй дэлгэц дээр гарчиг, явцын мөрийг нууна (сонголтуудад зай гаргана) */}
+          <Box sx={{ pr: 7, mb: 1.5, display: showPaywall && !authLoading ? 'none' : 'block' }}>
             <Box sx={{ fontWeight: 800, fontSize: 16 }}>
               {isMovie ? series.title : `${series.title} · ${ep}-р анги`}
             </Box>
@@ -834,6 +835,7 @@ export function DramaPlayerView({ id, initialEp }) {
               width: 1,
               m: 0,
               height: 24,
+              display: showPaywall && !authLoading ? 'none' : 'block',
               appearance: 'none',
               background: 'transparent',
               cursor: 'pointer',
@@ -850,7 +852,7 @@ export function DramaPlayerView({ id, initialEp }) {
           />
 
           {/* Хугацаа ба бүтэн дэлгэц */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: -0.25 }}>
+          <Box sx={{ display: showPaywall && !authLoading ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', mt: -0.25 }}>
             <Box sx={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums', opacity: 0.9 }}>
               {formatTime(partTime)} <Box component="span" sx={{ opacity: 0.6 }}>/ {partDur ? formatTime(partDur) : '--:--'}</Box>
             </Box>
