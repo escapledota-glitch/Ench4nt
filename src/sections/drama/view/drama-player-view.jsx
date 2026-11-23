@@ -811,43 +811,20 @@ export function DramaPlayerView({ id, initialEp }) {
             </Box>
           </Box>
 
-          <Box
-            component="input"
-            type="range"
-            aria-label="Явц"
-            min={0}
-            max={1000}
-            value={Math.round(progress * 1000)}
+          {/* Явцын мөр: утсан дээр аль ч хэсэгт нь дараад чирнэ (том мэдрэх талбай) */}
+          <Scrubber
+            progress={progress}
+            duration={partDur}
             disabled={locked}
-            onChange={(e) => {
+            hidden={showPaywall && !authLoading}
+            onScrub={showUi}
+            onSeek={(p) => {
               const v = videoRef.current;
-              const p = Number(e.target.value) / 1000;
               setProgress(p);
               if (v?.duration) {
                 const target = partStart + p * ((partEnd || v.duration) - partStart);
                 v.currentTime = limitAt ? Math.min(target, limitAt) : target;
               }
-              showUi();
-            }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
-            sx={{
-              width: 1,
-              m: 0,
-              height: 24,
-              display: showPaywall && !authLoading ? 'none' : 'block',
-              appearance: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              '&::-webkit-slider-runnable-track': {
-                height: 3,
-                borderRadius: 2,
-                background: `linear-gradient(90deg, ${C.accent2} ${progress * 100}%, rgba(255,255,255,0.3) ${progress * 100}%)`,
-              },
-              '&::-webkit-slider-thumb': { appearance: 'none', width: 12, height: 12, mt: '-4.5px', borderRadius: '50%', bgcolor: '#fff' },
-              '&::-moz-range-track': { height: 3, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.3)' },
-              '&::-moz-range-progress': { height: 3, borderRadius: 2, bgcolor: C.accent2 },
-              '&::-moz-range-thumb': { width: 12, height: 12, border: 0, borderRadius: '50%', bgcolor: '#fff' },
             }}
           />
 
@@ -1360,5 +1337,145 @@ function EpisodeSheet({ open, onClose, series, current, isSubscribed, onPick }) 
         })}
       </Box>
     </Drawer>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Явцын мөр — утсанд зориулсан: 40px өндөр мэдрэх талбай, дарсан газраасаа
+// шууд үсэрч, хуруугаа чирэхэд цагийн хөөс харагдана. Чирж байх хооронд
+// видео 0.2 сек тутам шинэчлэгдэж, хуруугаа авахад яг тэр цэг рүү очно.
+// ----------------------------------------------------------------------
+
+function Scrubber({ progress, duration, disabled, hidden, onSeek, onScrub }) {
+  const ref = useRef(null);
+  const [drag, setDrag] = useState(null); // 0..1 чирж байх үед
+  const lastSeek = useRef(0);
+  const dragging = useRef(false);
+
+  const at = (clientX) => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r || !r.width) return 0;
+    return Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+  };
+  const stop = (e) => e.stopPropagation();
+
+  const onDown = (e) => {
+    if (disabled) return;
+    e.stopPropagation();
+    ref.current?.setPointerCapture?.(e.pointerId);
+    dragging.current = true;
+    setDrag(at(e.clientX));
+    onScrub?.();
+  };
+  const onMove = (e) => {
+    if (!dragging.current) return;
+    e.stopPropagation();
+    const p = at(e.clientX);
+    setDrag(p);
+    onScrub?.();
+    const now = performance.now();
+    if (now - lastSeek.current > 200) {
+      lastSeek.current = now;
+      onSeek(p);
+    }
+  };
+  const onUp = (e) => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    e.stopPropagation();
+    onSeek(at(e.clientX));
+    setDrag(null);
+  };
+
+  const shown = drag ?? progress;
+  const pct = `${shown * 100}%`;
+  const active = drag !== null;
+
+  return (
+    <Box
+      ref={ref}
+      role="slider"
+      aria-label="Явц"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(shown * 100)}
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={onUp}
+      onTouchStart={stop}
+      onTouchMove={stop}
+      onTouchEnd={stop}
+      onClick={stop}
+      sx={{
+        position: 'relative',
+        display: hidden ? 'none' : 'block',
+        height: 40,
+        mt: -0.5,
+        mb: -0.75,
+        cursor: disabled ? 'default' : 'pointer',
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {/* зам */}
+      <Box
+        sx={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: '50%',
+          height: active ? 7 : 4,
+          transform: 'translateY(-50%)',
+          borderRadius: 4,
+          bgcolor: 'rgba(255,255,255,0.28)',
+          overflow: 'hidden',
+          transition: 'height 120ms ease',
+        }}
+      >
+        <Box sx={{ width: pct, height: 1, background: C.grad }} />
+      </Box>
+      {/* бариул */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: pct,
+          width: active ? 22 : 15,
+          height: active ? 22 : 15,
+          transform: 'translate(-50%, -50%)',
+          borderRadius: '50%',
+          bgcolor: '#fff',
+          boxShadow: active ? '0 0 0 6px rgba(236,72,153,0.35), 0 2px 8px rgba(0,0,0,0.5)' : '0 1px 4px rgba(0,0,0,0.5)',
+          transition: 'width 120ms ease, height 120ms ease, box-shadow 120ms ease',
+          pointerEvents: 'none',
+        }}
+      />
+      {/* чирж байх үеийн цаг */}
+      {active && duration > 0 && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 38,
+            left: `clamp(30px, ${pct}, calc(100% - 30px))`,
+            transform: 'translateX(-50%)',
+            px: 1.25,
+            py: 0.5,
+            borderRadius: 1.5,
+            bgcolor: 'rgba(0,0,0,0.78)',
+            border: '1px solid rgba(255,255,255,0.18)',
+            color: '#fff',
+            fontSize: 15,
+            fontWeight: 800,
+            fontVariantNumeric: 'tabular-nums',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+          }}
+        >
+          {formatTime(shown * duration)}
+        </Box>
+      )}
+    </Box>
   );
 }
