@@ -179,6 +179,11 @@ export function KinoSeriesEditView({ id }) {
                   );
                 })}
               </Stack>
+              {form.genres.length === 0 && (
+                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'warning.main' }}>
+                  ⚠ Төрөл сонгоогүй байна — нүүр хуудасны төрлийн жагсаалтуудад харагдахгүй (зөвхөн «Бүх кино»-д).
+                </Typography>
+              )}
             </Box>
 
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' } }}>
@@ -198,7 +203,7 @@ export function KinoSeriesEditView({ id }) {
                 <MenuItem value="Шинэ">Шинэ</MenuItem>
                 <MenuItem value="Топ">Топ</MenuItem>
               </TextField>
-              <TextField label="Эрэмбэ" type="number" value={form.sort} onChange={set('sort')} helperText="Бага тоо түрүүлж харагдана" />
+              <TextField label="Эрэмбэ" type="number" value={form.sort} onChange={set('sort')} helperText="Бага тоо түрүүлж харагдана — Топ 10-ын байр ч мөн (хамгийн бага = #1)" />
             </Box>
           </Stack>
         </Card>

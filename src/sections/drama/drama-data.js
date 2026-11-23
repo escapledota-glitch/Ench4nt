@@ -284,8 +284,9 @@ export const featuredSeries = (list = SERIES) => {
   return f.length ? f : list.slice(0, 4);
 };
 
-export const topSeries = (list = SERIES) =>
-  [...list].sort((a, b) => parseFloat(b.views) - parseFloat(a.views)).slice(0, 10);
+// Топ 10 = админы "Эрэмбэ"-ийн дараалал (жагсаалт аль хэдийн эрэмбээр эрэмбэлэгдсэн ирдэг):
+// эрэмбэ хамгийн бага нь #1. ("2.4 сая", "3.3к" гэх мэт үзэлтийн бичвэрээр эрэмбэлэхэд буруу гардаг байсан.)
+export const topSeries = (list = SERIES) => list.slice(0, 10);
 
 export const newSeries = (list = SERIES) => list.filter((s) => s.badge === 'Шинэ');
 

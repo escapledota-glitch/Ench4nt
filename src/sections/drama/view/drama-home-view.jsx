@@ -81,6 +81,18 @@ export function DramaHomeView() {
 
         {spotlight && <Spotlight series={spotlight} />}
 
+        {/* Бүх кино — төрөл сонгоогүй кино ч энд заавал харагдана */}
+        {list.length > 0 && (
+          <Row>
+            <SectionTitle title="Бүх кино" href="/drama/browse" />
+            <HScroll>
+              {list.map((s) => (
+                <PosterCard key={s.id} series={s} width={cardWidth} />
+              ))}
+            </HScroll>
+          </Row>
+        )}
+
         {genres.map((g) => (
           <Row key={g}>
             <SectionTitle title={g} href={`/drama/browse?genre=${encodeURIComponent(g)}`} />
