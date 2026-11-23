@@ -10,7 +10,7 @@ import { RouterLink } from 'src/routes/components';
 
 import { normalizeSubtitleStyle } from 'src/lib/subtitles';
 
-import { BuyButton } from '../drama-buy';
+import { PaywallOffers } from '../drama-buy';
 import { useDramaAuth } from '../drama-auth';
 import { isHls, KinoVideo } from '../drama-video';
 import { useDramaStore } from '../use-drama-store';
@@ -20,7 +20,7 @@ import { usePictureBox, SubtitleLayers } from '../drama-subtitles';
 
 // Админы "дэлгэц дээр тааруулах" самбар — зөвхөн админд ачаалагдана
 const KinoEditPanel = dynamic(() => import('src/sections/kino-admin/kino-edit-panel'), { ssr: false });
-import { freeLabel, isForSale, isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
+import { isFreeEpisode, previewSeconds, getEpisodeVideo } from '../drama-data';
 
 // ----------------------------------------------------------------------
 // Босоо бүтэн дэлгэцийн тоглуулагч.
@@ -738,35 +738,11 @@ export function DramaPlayerView({ id, initialEp }) {
                       ? 'Энэ кино захиалгатай'
                       : `${ep}-р ангиас эхлэн захиалгатай`}
                 </Box>
-                <Box sx={{ fontSize: 14, opacity: 0.8, maxWidth: 290, lineHeight: 1.6 }}>
-                  {previewEnded
-                    ? isForSale(series)
-                      ? 'Үргэлжлүүлэн үзэхийн тулд энэ киног худалдаж авах эсвэл багц аваарай.'
-                      : 'Үргэлжлүүлэн үзэхийн тулд 444 Кино-гийн багц авна уу — бүх кино, цуврал бүтэн нээгдэнэ.'
-                    : `${freeLabel(series)}. ${isForSale(series) ? 'Энэ киног худалдаж авах эсвэл багц аваарай.' : 'Үргэлжлүүлэн үзэхийн тулд 444 Кино-гийн багц авна уу.'}`}
+                <Box sx={{ fontSize: 14, opacity: 0.85, maxWidth: 320, lineHeight: 1.6 }}>
+                  Киногоо үргэлжлүүлэн үзэхийг хүсвэл доорх сонголтуудаас өөрт тохирох эрхээ сонгоорой.
                 </Box>
-                {/* Зөвхөн энэ киног авах */}
-                <BuyButton series={series} sx={{ mt: 1, borderRadius: 6, px: 3.5 }} />
-                <Box
-                  component={RouterLink}
-                  href={`/drama/plans?next=${backHere}`}
-                  sx={{
-                    mt: isForSale(series) ? 0 : 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    px: 3.5,
-                    height: 50,
-                    borderRadius: 6,
-                    background: C.grad,
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: 15,
-                    textDecoration: 'none',
-                  }}
-                >
-                  <Icon name="crown" size={20} /> {isForSale(series) ? 'Бүх кино — багц сонгох' : 'Багц сонгох'}
-                </Box>
+                {/* 7 хоног / 1 сар / энэ киног худалдаж авах */}
+                <PaywallOffers series={series} backHere={backHere} />
                 {!user && (
                   <Box
                     component={RouterLink}

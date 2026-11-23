@@ -10,7 +10,7 @@ import { RouterLink } from 'src/routes/components';
 
 import { C, Icon } from './drama-ui';
 import { useDramaAuth } from './drama-auth';
-import { priceOf, isForSale, formatPrice } from './drama-data';
+import { PLANS, priceOf, isForSale, formatPrice } from './drama-data';
 
 // ----------------------------------------------------------------------
 // Кино тус бүрийг худалдаж авах
@@ -169,5 +169,97 @@ export function BuyDialog({ series, open, onClose, onBought }) {
         </Box>
       )}
     </Dialog>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Түгжээтэй ангийн дэлгэц дээрх сонголтууд: 7 хоног, 1 сар, энэ киног худалдаж авах
+// ----------------------------------------------------------------------
+
+function OfferRow({ emoji, title, text, price, was, highlight, ...props }) {
+  return (
+    <Box
+      {...props}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.25,
+        width: 1,
+        p: 1.25,
+        pr: 1.5,
+        border: '1px solid',
+        borderColor: highlight ? 'rgba(251,191,36,0.7)' : 'rgba(255,255,255,0.16)',
+        borderRadius: 2,
+        bgcolor: highlight ? 'rgba(251,191,36,0.10)' : 'rgba(255,255,255,0.06)',
+        color: '#fff',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        textDecoration: 'none',
+        cursor: 'pointer',
+        transition: 'transform 120ms ease, background-color 120ms ease',
+        '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+        '&:active': { transform: 'scale(0.98)' },
+      }}
+    >
+      <Box sx={{ fontSize: 24, lineHeight: 1, flexShrink: 0 }}>{emoji}</Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box sx={{ fontWeight: 800, fontSize: 15 }}>{title}</Box>
+        <Box sx={{ fontSize: 12, opacity: 0.75, lineHeight: 1.4 }}>{text}</Box>
+      </Box>
+      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+        {was && <Box sx={{ fontSize: 11, opacity: 0.55, textDecoration: 'line-through' }}>{formatPrice(was)}</Box>}
+        <Box sx={{ fontWeight: 800, fontSize: 15, color: C.gold }}>{formatPrice(price)}</Box>
+      </Box>
+    </Box>
+  );
+}
+
+export function PaywallOffers({ series, backHere }) {
+  const [open, setOpen] = useState(false);
+  const { canWatch } = useDramaAuth();
+  const week = PLANS.find((p) => p.id === 'week');
+  const month = PLANS.find((p) => p.id === 'month');
+  const canBuy = isForSale(series) && !canWatch(series.id);
+
+  return (
+    <Box sx={{ width: 1, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box sx={{ fontSize: 13, opacity: 0.7, textAlign: 'left', mb: 0.25 }}>Танд дараах багцуудыг санал болгож байна:</Box>
+      {week && (
+        <OfferRow
+          component={RouterLink}
+          href={`/drama/plans?plan=week&next=${backHere}`}
+          emoji="📅"
+          title="7 хоногийн багц"
+          text="7 хоногийн турш бүх кино үнэгүй"
+          price={week.price}
+          was={week.was}
+          highlight
+        />
+      )}
+      {month && (
+        <OfferRow
+          component={RouterLink}
+          href={`/drama/plans?plan=month&next=${backHere}`}
+          emoji="📆"
+          title="1 сарын багц"
+          text="Бүтэн сарын турш бүх кино үнэгүй"
+          price={month.price}
+        />
+      )}
+      {canBuy && (
+        <>
+          <OfferRow
+            component="button"
+            type="button"
+            onClick={() => setOpen(true)}
+            emoji="🎥"
+            title="Кино худалдан авах"
+            text={`Сонгосон киногоо тусад нь ${priceOf(series).toLocaleString('en-US')} төгрөгөөр худалдан авч үзэх боломжтой`}
+            price={priceOf(series)}
+          />
+          <BuyDialog series={series} open={open} onClose={() => setOpen(false)} />
+        </>
+      )}
+    </Box>
   );
 }
