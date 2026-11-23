@@ -126,8 +126,11 @@ export function DramaPlayerView({ id, initialEp }) {
     return () => clearTimeout(t);
   }, [signedExpires]);
 
+  // Анги солигдсон даруйд stream нь хуучин ангийнх хэвээр байдаг — түүнийг шинэ ангид
+  // ашиглахгүй (хэсэгт хуваасан кинонд хуучин хэсгийн цагийг авч, дараалал алдагдаж байсан)
+  const streamIsCurrent = stream.key === `${id}:${ep}`;
   const freshSrc =
-    !series || stream.loading
+    !series || stream.loading || !streamIsCurrent
       ? ''
       : stream.url || (stream.mode === 'fallback' || stream.mode === 'none' ? getEpisodeVideo(series, ep) : '');
 
