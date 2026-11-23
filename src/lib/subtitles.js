@@ -52,38 +52,40 @@ export const looksLikeSubtitles = (vtt) => /-->/.test(vtt);
 // mask: эх видеон дээр шатаагдсан хуучин хадмалыг нуух "хаалт" тууз
 // mode:   'band'  = өнгөт/бүдэг тууз бүхэлдээ
 //         'smart' = зөвхөн цагаан бичгийг олж, эргэн тойрных нь зургаар бөглөж бүдгэрүүлнэ
-// timing: 'always' = үргэлж, 'subs' = манай хадмал гарах үед л (±pad сек)
+// timing: 'always' = үргэлж, 'subs' = манай хадмал гарах үед л (padBefore сек өмнөөс, padAfter сек дараа хүртэл)
+// Анхдагч утгууд = "1995" киноны тааруулсан тохиргоо (шинэ кино бүр ингэж эхэлнэ)
 export const DEFAULT_SUB_MASK = {
-  on: false,
-  y: 80,
-  h: 9,
-  w: 100,
+  on: true,
+  y: 71,
+  h: 26,
+  w: 75,
   color: '#000000',
   opacity: 85,
   blur: 12,
-  mode: 'band',
-  timing: 'always',
-  pad: 0.4,
-  threshold: 200,
-  strength: 8,
-  expand: 2,
+  mode: 'smart',
+  timing: 'subs',
+  padBefore: 1, // манай хадмалаас хэдэн сек өмнө эхлэх
+  padAfter: 1, // манай хадмал дууссаны дараа хэдэн сек үргэлжлэх
+  threshold: 202,
+  strength: 10,
+  expand: 4,
   textColor: 'white', // 'white' | 'yellow' | 'bright'
   outline: true, // зөвхөн бараан хүрээтэй (хадмалын) бичиг — цагаан хувцас, гэрэл гэх мэтэд нөлөөлөхгүй
 };
 
 export const DEFAULT_SUB_STYLE = {
-  x: 50,
-  y: 82,
-  size: 18,
+  x: 51,
+  y: 67,
+  size: 28,
   color: '#ffffff',
-  bg: 'shadow',
-  bold: true,
+  bg: 'box',
+  bold: false,
   delay: 0,
   width: 86,
-  bgColor: '#000000',
-  bgOpacity: 72,
-  bgBlur: 0,
-  bgPad: 0.45,
+  bgColor: '#1d1529',
+  bgOpacity: 32,
+  bgBlur: 2,
+  bgPad: 0.6,
   mask: DEFAULT_SUB_MASK,
 };
 
@@ -120,7 +122,9 @@ export function normalizeSubtitleStyle(s = {}) {
       blur: clamp(m.blur, 0, 40, dm.blur),
       mode: ['band', 'smart'].includes(m.mode) ? m.mode : dm.mode,
       timing: ['always', 'subs'].includes(m.timing) ? m.timing : dm.timing,
-      pad: Math.round(clamp(m.pad, 0, 3, dm.pad) * 10) / 10,
+      // хуучин ганц "pad" тохиргоотой бол шинэ анхдагч (1 сек) хэрэглэнэ
+      padBefore: Math.round(clamp(m.padBefore, 0, 3, dm.padBefore) * 10) / 10,
+      padAfter: Math.round(clamp(m.padAfter, 0, 5, dm.padAfter) * 10) / 10,
       threshold: clamp(m.threshold, 120, 255, dm.threshold),
       strength: clamp(m.strength, 2, 24, dm.strength),
       expand: clamp(m.expand, 0, 8, dm.expand),

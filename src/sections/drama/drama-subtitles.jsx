@@ -120,9 +120,9 @@ export function SubtitleText({ text, style, pictureWidth }) {
 }
 
 // ----------------------------------------------------------------------
-// Хадмалын одоогийн мөр + манай хадмал гарах мөчийн ойролцоо эсэх (±pad сек).
+// Хадмалын одоогийн мөр + манай хадмал гарах мөчийн ойролцоо эсэх (before сек өмнөөс, after сек дараа хүртэл).
 // Хуучин (шатаагдсан) хадмал ихэвчлэн яг ижил мөчид гардаг тул туузыг тэр үед л харуулна.
-export function useCueState(videoRef, cues, delay = 0, pad = 0) {
+export function useCueState(videoRef, cues, delay = 0, before = 0, after = 0) {
   const [state, setState] = useState({ text: '', near: false });
 
   useEffect(() => {
@@ -137,14 +137,14 @@ export function useCueState(videoRef, cues, delay = 0, pad = 0) {
         const t = v.currentTime - delay;
         const cue = cues.find((c) => t >= c.start && t <= c.end);
         const text = cue ? cue.text : '';
-        const near = !!cue || (pad > 0 && cues.some((c) => t >= c.start - pad && t <= c.end + pad));
+        const near = !!cue || ((before > 0 || after > 0) && cues.some((c) => t >= c.start - before && t <= c.end + after));
         setState((prev) => (prev.text === text && prev.near === near ? prev : { text, near }));
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [cues, delay, pad, videoRef]);
+  }, [cues, delay, before, after, videoRef]);
 
   return state;
 }
@@ -410,7 +410,8 @@ export function SubtitleLayers({ videoRef, url, style, box, showText = true, edi
   const cues = useCues(url);
   const m = { ...DEFAULT_SUB_MASK, ...(style?.mask || {}) };
   const delay = Number(style?.delay) || 0;
-  const { text, near } = useCueState(videoRef, cues, delay, m.mode === 'smart' || m.timing === 'subs' ? m.pad : 0);
+  const useMargins = m.mode === 'smart' || m.timing === 'subs';
+  const { text, near } = useCueState(videoRef, cues, delay, useMargins ? m.padBefore : 0, useMargins ? m.padAfter : 0);
   // "Зөвхөн бичиг" горимд манай хадмал гарах үед л ажиллана (бусад үед киноны цагаан зүйлд хүрэхгүй)
   const timing = m.mode === 'smart' ? 'subs' : m.timing;
   // Тааруулах үед эффектийг үргэлж харуулна (зогсоосон кадр дээр үр дүнг харахын тулд)

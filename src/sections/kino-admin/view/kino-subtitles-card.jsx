@@ -287,7 +287,7 @@ const MASK_PRESETS = ['#000000', '#120d1b', '#1f2937', '#ffffff'];
 
 export function StyleControls({ style, onChange }) {
   const set = (k) => (_e, v) => onChange({ ...style, [k]: v });
-  const mask = style.mask || DEFAULT_SUB_MASK;
+  const mask = { ...DEFAULT_SUB_MASK, ...(style.mask || {}) };
   const setMask = (k) => (_e, v) => onChange({ ...style, mask: { ...mask, [k]: v } });
 
   return (
@@ -382,9 +382,14 @@ export function StyleControls({ style, onChange }) {
               )}
             </Box>
             {(mask.timing === 'subs' || mask.mode === 'smart') && (
-              <Row label="Хугацааны нөөц (өмнө/хойно)" value={`±${mask.pad} сек`}>
-                <Slider value={mask.pad} min={0} max={3} step={0.1} onChange={setMask('pad')} />
-              </Row>
+              <>
+                <Row label="Өмнө нь эхлэх" value={`${mask.padBefore} сек`}>
+                  <Slider value={mask.padBefore} min={0} max={3} step={0.1} onChange={setMask('padBefore')} />
+                </Row>
+                <Row label="Дараа нь үргэлжлэх (хуучин бичиг бүрэн арилтал)" value={`${mask.padAfter} сек`}>
+                  <Slider value={mask.padAfter} min={0} max={5} step={0.1} onChange={setMask('padAfter')} />
+                </Row>
+              </>
             )}
 
             <Row label="Босоо байрлал" value={`${mask.y}%`}>
