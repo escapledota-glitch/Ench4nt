@@ -1404,7 +1404,7 @@ function Scrubber({ progress, duration, disabled, hidden, compact, onSeek, onScr
   const shown = drag ?? progress;
   const pct = `${shown * 100}%`;
   const active = drag !== null;
-  // товчнууд нуугдсан үед: зөвхөн нимгэн шугам (бариулгүй), гэхдээ дарж чирч болно
+  // товчнууд нуугдсан үед: мөр харагдахгүй, гэхдээ дарж гулсуулбал чирэлт эхэлнэ
   const thin = compact && !active;
 
   return (
@@ -1446,9 +1446,11 @@ function Scrubber({ progress, duration, disabled, hidden, compact, onSeek, onScr
           height: active ? 7 : thin ? 3 : 4,
           transform: 'translateY(-50%)',
           borderRadius: 4,
-          bgcolor: thin ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.28)',
+          bgcolor: 'rgba(255,255,255,0.28)',
           overflow: 'hidden',
-          transition: 'height 120ms ease',
+          // тоглож байх үед бүрэн нуугдана (харагдахгүй ч дарж гулсуулбал ажиллана)
+          opacity: thin ? 0 : 1,
+          transition: 'height 120ms ease, opacity 350ms ease',
         }}
       >
         <Box sx={{ width: pct, height: 1, background: C.grad }} />
