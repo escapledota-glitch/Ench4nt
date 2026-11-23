@@ -102,6 +102,9 @@ export function useStreamUrl(seriesId, ep, refreshKey, adminToken) {
             expires: body.expires,
             subtitles: body.subtitles ?? [],
             subtitleStyle: body.subtitleStyle ?? null,
+            // нэг видеог хэсэгт хуваасан бол энэ хэсгийн цаг (сек)
+            start: Number(body.start) || 0,
+            end: Number(body.end) || 0,
             key,
           });
       } catch {

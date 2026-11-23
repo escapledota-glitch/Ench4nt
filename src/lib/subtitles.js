@@ -64,8 +64,8 @@ export const DEFAULT_SUB_MASK = {
   blur: 12,
   mode: 'smart',
   timing: 'subs',
-  padBefore: 1, // манай хадмалаас хэдэн сек өмнө эхлэх
-  padAfter: 1, // манай хадмал дууссаны дараа хэдэн сек үргэлжлэх
+  padBefore: 0, // манай хадмалаас хэдэн сек өмнө эхлэх
+  padAfter: 0, // манай хадмал дууссаны дараа хэдэн сек үргэлжлэх
   threshold: 202,
   strength: 10,
   expand: 4,
@@ -122,7 +122,7 @@ export function normalizeSubtitleStyle(s = {}) {
       blur: clamp(m.blur, 0, 40, dm.blur),
       mode: ['band', 'smart'].includes(m.mode) ? m.mode : dm.mode,
       timing: ['always', 'subs'].includes(m.timing) ? m.timing : dm.timing,
-      // хуучин ганц "pad" тохиргоотой бол шинэ анхдагч (1 сек) хэрэглэнэ
+      // хуучин ганц "pad" тохиргоотой бол шинэ анхдагч (0 сек) хэрэглэнэ
       padBefore: Math.round(clamp(m.padBefore, 0, 3, dm.padBefore) * 10) / 10,
       padAfter: Math.round(clamp(m.padAfter, 0, 5, dm.padAfter) * 10) / 10,
       threshold: clamp(m.threshold, 120, 255, dm.threshold),

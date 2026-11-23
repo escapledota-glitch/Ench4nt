@@ -21,6 +21,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { withPart, parsePart, parseClock, formatClock } from 'src/lib/video-parts';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
@@ -29,7 +30,7 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { GENRES, freeLabel } from 'src/sections/drama/drama-data';
 
 import { KinoSubtitlesCard } from './kino-subtitles-card';
-import { slugify, errorText, saveSeries, uploadImage, listEpisodes, saveEpisodes, getSeriesRow } from '../kino-api';
+import { slugify, errorText, saveSeries, uploadImage, listEpisodes, saveEpisodes, getSeriesRow, setEpisodeCount } from '../kino-api';
 
 // ----------------------------------------------------------------------
 
@@ -222,7 +223,14 @@ export function KinoSeriesEditView({ id }) {
         </Stack>
       </Box>
 
-      {!isNew && <EpisodesCard seriesId={id} total={Number(form.episodes) || 0} free={Number(form.free_episodes) || 0} />}
+      {!isNew && (
+        <EpisodesCard
+          seriesId={id}
+          total={Number(form.episodes) || 0}
+          free={Number(form.free_episodes) || 0}
+          onSplit={(count, freeCount) => setForm((f) => ({ ...f, episodes: count, free_episodes: freeCount }))}
+        />
+      )}
 
       {!isNew && <KinoSubtitlesCard seriesId={id} total={Number(form.episodes) || 1} poster={form.poster} />}
     </DashboardContent>
@@ -424,13 +432,14 @@ const isEmbedLink = (url) => /iframe\.mediadelivery\.net|player\.mediadelivery\.
 
 // ----------------------------------------------------------------------
 
-function EpisodesCard({ seriesId, total, free }) {
+function EpisodesCard({ seriesId, total, free, onSplit }) {
   const [videos, setVideos] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulk, setBulk] = useState('');
   const [bulkStart, setBulkStart] = useState(1);
+  const [splitOpen, setSplitOpen] = useState(false);
 
   useEffect(() => {
     listEpisodes(seriesId)
@@ -487,6 +496,9 @@ function EpisodesCard({ seriesId, total, free }) {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
+          <Button variant="outlined" color="inherit" onClick={() => setSplitOpen(true)} disabled={!videos} startIcon={<Iconify icon="solar:scissors-bold" />}>
+            Нэг видеог хуваах
+          </Button>
           <Button variant="outlined" color="inherit" onClick={() => setBulkOpen(true)} startIcon={<Iconify icon="solar:clipboard-list-bold" />}>
             Олноор оруулах
           </Button>
@@ -508,7 +520,11 @@ function EpisodesCard({ seriesId, total, free }) {
               onChange={(e) => update(ep, e.target.value)}
               placeholder="https://vz-xxxx.b-cdn.net/<video-id>/playlist.m3u8"
               error={isEmbedLink(videos[ep])}
-              helperText={isEmbedLink(videos[ep]) ? "Энэ нь embed холбоос байна. Bunny-гийн HLS Playlist URL (.m3u8) хуулна уу." : undefined}
+              helperText={
+                isEmbedLink(videos[ep])
+                  ? "Энэ нь embed холбоос байна. Bunny-гийн HLS Playlist URL (.m3u8) хуулна уу."
+                  : partLabel(videos[ep])
+              }
               slotProps={{
                 input: {
                   startAdornment: (
@@ -523,6 +539,22 @@ function EpisodesCard({ seriesId, total, free }) {
             />
           ))}
         </Box>
+      )}
+
+      {splitOpen && (
+        <SplitDialog
+          seriesId={seriesId}
+          videos={videos}
+          total={total}
+          free={free}
+          onClose={() => setSplitOpen(false)}
+          onDone={(next, count, freeCount) => {
+            setVideos(next);
+            setDirty(false);
+            onSplit?.(count, freeCount);
+            setSplitOpen(false);
+          }}
+        />
       )}
 
       <Dialog open={bulkOpen} onClose={() => setBulkOpen(false)} fullWidth maxWidth="sm">
@@ -544,5 +576,139 @@ function EpisodesCard({ seriesId, total, free }) {
         </DialogActions>
       </Dialog>
     </Card>
+  );
+}
+
+// "Хэсэг: 17:00 – 35:00" гэх мэт (хэсэг биш бол юу ч харуулахгүй)
+function partLabel(url) {
+  const { start, end } = parsePart(url);
+  if (!start && !end) return undefined;
+  return `✂ Хэсэг: ${formatClock(start)} – ${end ? formatClock(end) : 'төгсгөл'}`;
+}
+
+// ----------------------------------------------------------------------
+// Нэг видеог хэд хэдэн анги болгон хуваах.
+// Жишээ: 17:00, 35:00 → 1-р анги 0:00–17:00, 2-р 17:00–35:00, 3-р 35:00–төгсгөл.
+// Анги бүр дуусахад дараагийнх нь өөрөө үргэлжилнэ; үнэгүйгээс хойших нь захиалга шаардана.
+// ----------------------------------------------------------------------
+
+function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
+  // Одоо хуваасан байгаа бол түүнийг нь бөглөнө
+  const first = parsePart(videos?.[1]);
+  const existingCuts = Object.keys(videos || {})
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((ep) => parsePart(videos[ep]))
+    .filter((pt) => pt.base === first.base && pt.start > 0)
+    .map((pt) => formatClock(pt.start));
+
+  const [url, setUrl] = useState(first.base || '');
+  const [cuts, setCuts] = useState(existingCuts.length ? existingCuts.join(', ') : '17:00');
+  const [freeCount, setFreeCount] = useState(existingCuts.length ? Math.max(0, free) : 1);
+  const [saving, setSaving] = useState(false);
+
+  const times = cuts
+    .split(/[,\s]+/)
+    .filter(Boolean)
+    .map(parseClock);
+  const bad = times.some((t) => !Number.isFinite(t) || t <= 0);
+  const sorted = [...new Set(times)].sort((a, b) => a - b);
+  const bounds = [0, ...sorted];
+  const parts = bounds.map((start, i) => ({ start, end: bounds[i + 1] || 0 }));
+  const base = url.trim().replace(/#.*$/, '');
+  const ok = !!base && !bad && !isEmbedLink(base);
+  const freeN = Math.min(parts.length, Math.max(0, Math.round(Number(freeCount) || 0)));
+
+  const apply = async () => {
+    setSaving(true);
+    try {
+      const next = {};
+      parts.forEach((pt, i) => {
+        next[i + 1] = withPart(base, pt.start, pt.end);
+      });
+      // илүү үлдсэн хуучин ангиудыг устгана
+      const maxOld = Math.max(total, ...Object.keys(videos || {}).map(Number), 0);
+      for (let ep = parts.length + 1; ep <= maxOld; ep += 1) next[ep] = '';
+      await saveEpisodes(seriesId, next);
+      await setEpisodeCount(seriesId, parts.length, freeN);
+      const kept = Object.fromEntries(Object.entries(next).filter(([, v]) => v));
+      toast.success(`${parts.length} анги болгон хуваалаа`);
+      onDone(kept, parts.length, freeN);
+    } catch (e) {
+      toast.error(errorText(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Нэг видеог хэд хэдэн анги болгох</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+          Нэг видеог хуваах цагуудаа бичнэ. Анги дуусахад дараагийнх нь өөрөө үргэлжилнэ. Үнэгүй ангиас хойших нь захиалга (эсвэл худалдан авалт) шаардана.
+        </Typography>
+        <Stack spacing={2}>
+          <TextField
+            label="Видео холбоос (.m3u8)"
+            size="small"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://vz-xxxx.b-cdn.net/<video-id>/playlist.m3u8"
+            error={isEmbedLink(url)}
+            fullWidth
+          />
+          <TextField
+            label="Хуваах цагууд"
+            size="small"
+            value={cuts}
+            onChange={(e) => setCuts(e.target.value)}
+            error={bad}
+            helperText={bad ? 'Жишээ: 17:00, 35:00 (мин:сек эсвэл цаг:мин:сек)' : 'Таслалаар тусгаарлана. Жишээ: 17:00, 35:00 → 3 анги'}
+            fullWidth
+          />
+          <TextField
+            label="Үнэгүй анги"
+            type="number"
+            size="small"
+            value={freeCount}
+            onChange={(e) => setFreeCount(e.target.value)}
+            slotProps={{ htmlInput: { min: 0, max: parts.length } }}
+            sx={{ width: 160 }}
+          />
+          {!bad && (
+            <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'background.neutral' }}>
+              {parts.map((pt, i) => (
+                <Stack key={pt.start} direction="row" spacing={1} sx={{ alignItems: 'center', py: 0.25 }}>
+                  <Typography variant="subtitle2" sx={{ width: 56 }}>
+                    {i + 1}-р
+                  </Typography>
+                  <Typography variant="body2" sx={{ flex: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    {formatClock(pt.start)} – {pt.end ? formatClock(pt.end) : 'төгсгөл хүртэл'}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={i < freeN ? 'Үнэгүй' : '🔒 Захиалга'}
+                    color={i < freeN ? 'success' : 'warning'}
+                    variant="soft"
+                  />
+                </Stack>
+              ))}
+            </Box>
+          )}
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Хадмалыг 1-р ангид бүтэн видеоны цагаар оруулахад бүх ангид ажиллана.
+          </Typography>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button color="inherit" onClick={onClose}>
+          Болих
+        </Button>
+        <Button variant="contained" disabled={!ok} loading={saving} onClick={apply}>
+          Хуваах ба хадгалах
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

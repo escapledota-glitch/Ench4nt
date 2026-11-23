@@ -35,6 +35,7 @@ export const listSeries = () => call('listSeries');
 export const getSeriesRow = (id) => call('getSeries', { id });
 export const saveSeries = (row, originalId) => call('saveSeries', { row, originalId });
 export const setPublished = (id, published) => call('setPublished', { id, published });
+export const setEpisodeCount = (id, episodes, freeEpisodes) => call('setEpisodeCount', { id, episodes, freeEpisodes });
 export const deleteSeries = (id) => call('deleteSeries', { id });
 
 // ---------- Анги ----------

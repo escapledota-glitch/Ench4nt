@@ -72,6 +72,15 @@ const ACTIONS = {
 
   setPublished: async ({ id, published }) => must(await db().from('series').update({ published }).eq('id', id)),
 
+  // Нэг видеог хэсэгт хуваахад ангийн тоо ба үнэгүй ангийг шинэчилнэ
+  setEpisodeCount: async ({ id, episodes, freeEpisodes }) =>
+    must(
+      await db()
+        .from('series')
+        .update({ episodes: Math.max(1, Math.round(Number(episodes) || 1)), free_episodes: Math.max(0, Math.round(Number(freeEpisodes) || 0)) })
+        .eq('id', id)
+    ),
+
   deleteSeries: async ({ id }) => must(await db().from('series').delete().eq('id', id)),
 
   // ---------- Анги ----------

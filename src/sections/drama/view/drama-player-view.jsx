@@ -134,7 +134,7 @@ export function DramaPlayerView({ id, initialEp }) {
   // Тоглож буй ангийн холбоосыг тогтвортой барина — дахин шалгахад видео эхнээс
   // нь эхлэхгүй. Зөвхөн (1) өөр анги, (2) урьдчилан үзэхээс бүтэн эрх рүү шилжих,
   // (3) хугацаа дуусах гэж байгаа үед солино — тэгэхдээ үзэж байсан секундээс үргэлжилнэ.
-  const [active, setActive] = useState({ key: '', src: '', mode: null, expires: 0 });
+  const [active, setActive] = useState({ key: '', src: '', mode: null, expires: 0, start: 0, end: 0 });
   const resumeAt = useRef(0);
   const activeKey = `${series?.id}:${ep}`;
 
@@ -146,11 +146,21 @@ export function DramaPlayerView({ id, initialEp }) {
       const expiring = prev.expires && Date.now() / 1000 > prev.expires - 120;
       if (sameEp && !upgraded && !expiring) return prev;
       if (sameEp) resumeAt.current = videoRef.current?.currentTime || 0;
-      return { key: activeKey, src: freshSrc, mode: stream.mode, expires: signedExpires };
+      // Нэг видеог хэсэгт хуваасан бол шинэ хэсэг өөрийн эхлэх цагаасаа тоглоно
+      else resumeAt.current = stream.start || 0;
+      return { key: activeKey, src: freshSrc, mode: stream.mode, expires: signedExpires, start: stream.start || 0, end: stream.end || 0 };
     });
-  }, [activeKey, freshSrc, stream.mode, signedExpires]);
+  }, [activeKey, freshSrc, stream.mode, stream.start, stream.end, signedExpires]);
 
   const videoSrc = active.key === activeKey ? active.src : '';
+
+  // Хэсгийн цаг (бүтэн видеоны секундээр). Хэсэггүй бол 0 → видеоны эхнээс төгсгөл хүртэл.
+  const partStart = active.key === activeKey ? active.start || 0 : 0;
+  const partEnd = active.key === activeKey ? active.end || 0 : 0;
+  const partDur = Math.max(0, (partEnd || duration) - partStart);
+  const partTime = Math.max(0, time - partStart);
+  // Үнэгүй хугацаа хэсгийн эхнээс тоолно
+  const limitAt = previewLimit ? partStart + previewLimit : 0;
   const seriesId = series?.id;
 
   const goTo = useCallback(
@@ -237,11 +247,12 @@ export function DramaPlayerView({ id, initialEp }) {
     (delta) => {
       const v = videoRef.current;
       if (!v || !v.duration) return;
-      const max = previewLimit ? Math.min(previewLimit, v.duration - 0.2) : v.duration - 0.2;
-      v.currentTime = Math.min(Math.max(0, v.currentTime + delta), max);
+      const end = partEnd ? Math.min(partEnd, v.duration) : v.duration;
+      const max = limitAt ? Math.min(limitAt, end - 0.2) : end - 0.2;
+      v.currentTime = Math.min(Math.max(partStart, v.currentTime + delta), max);
       showUi();
     },
-    [showUi, previewLimit]
+    [showUi, limitAt, partStart, partEnd]
   );
 
   // ---------- Дуу ----------
@@ -498,17 +509,27 @@ export function DramaPlayerView({ id, initialEp }) {
               onTimeUpdate={(e) => {
                 const v = e.currentTarget;
                 // Үнэгүй хугацаа дуусвал зогсооно
-                if (previewLimit && v.currentTime >= previewLimit) {
+                if (limitAt && v.currentTime >= limitAt) {
                   v.pause();
-                  v.currentTime = previewLimit;
+                  v.currentTime = limitAt;
                   setPreviewEnded(true);
                 }
+                // Хэсэг дууссан → дараагийн хэсэг автоматаар үргэлжилнэ (захиалгагүй бол түгжээ гарна)
+                if (partEnd && v.currentTime >= partEnd) {
+                  v.pause();
+                  if (ep < total) goTo(ep + 1);
+                  else setPaused(true);
+                  return;
+                }
                 setTime(v.currentTime);
-                if (v.duration) setProgress(v.currentTime / v.duration);
+                const len = (partEnd || v.duration || 0) - partStart;
+                if (len > 0) setProgress(Math.min(1, Math.max(0, (v.currentTime - partStart) / len)));
               }}
               onSeeking={(e) => {
                 const v = e.currentTarget;
-                if (previewLimit && v.currentTime > previewLimit) v.currentTime = previewLimit;
+                if (limitAt && v.currentTime > limitAt) v.currentTime = limitAt;
+                else if (partEnd && v.currentTime > partEnd) v.currentTime = partEnd - 0.2;
+                if (partStart && v.currentTime < partStart - 0.5) v.currentTime = partStart;
               }}
               onEnded={() => (isMovie ? setPaused(true) : goTo(ep + 1))}
               sx={{ width: 1, height: 1, objectFit: 'cover', display: 'block' }}
@@ -683,7 +704,7 @@ export function DramaPlayerView({ id, initialEp }) {
             }}
           >
             <Icon name="crown" size={14} />
-            Үнэгүй: {formatTime(Math.max(0, previewLimit - time))} үлдлээ
+            Үнэгүй: {formatTime(Math.max(0, previewLimit - partTime))} үлдлээ
           </Box>
         )}
 
@@ -828,7 +849,10 @@ export function DramaPlayerView({ id, initialEp }) {
               const v = videoRef.current;
               const p = Number(e.target.value) / 1000;
               setProgress(p);
-              if (v?.duration) v.currentTime = previewLimit ? Math.min(p * v.duration, previewLimit) : p * v.duration;
+              if (v?.duration) {
+                const target = partStart + p * ((partEnd || v.duration) - partStart);
+                v.currentTime = limitAt ? Math.min(target, limitAt) : target;
+              }
               showUi();
             }}
             onTouchStart={(e) => e.stopPropagation()}
@@ -855,7 +879,7 @@ export function DramaPlayerView({ id, initialEp }) {
           {/* Хугацаа ба бүтэн дэлгэц */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: -0.25 }}>
             <Box sx={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums', opacity: 0.9 }}>
-              {formatTime(time)} <Box component="span" sx={{ opacity: 0.6 }}>/ {duration ? formatTime(duration) : '--:--'}</Box>
+              {formatTime(partTime)} <Box component="span" sx={{ opacity: 0.6 }}>/ {partDur ? formatTime(partDur) : '--:--'}</Box>
             </Box>
             <Box
               component="button"

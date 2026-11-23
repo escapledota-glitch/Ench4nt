@@ -1,6 +1,7 @@
 import { jwtVerify } from 'jose';
 import { createClient } from '@supabase/supabase-js';
 
+import { parsePart } from 'src/lib/video-parts';
 import { signBunnyUrl } from 'src/lib/bunny-sign';
 import { SUB_LANGS, subtitlePath, subtitleFolder, readSubtitleStyle } from 'src/lib/subtitles';
 
@@ -125,17 +126,40 @@ export async function POST(request) {
   if (!row?.video_url || !series) return json({ url: null }); // видео оруулаагүй анги
   if (!series.published || ep > series.episodes) return json({ error: 'not found' }, 404);
 
+  // Нэг видеог хэсэгт хуваасан бол: зөвхөн энэ хэсгийн цаг (start–end) тоглоно
+  const part = parsePart(row.video_url);
+  const partWindow = part.start || part.end ? { start: part.start, end: part.end } : {};
+
+  // Хэсгүүд нэг видеог хуваалцдаг — хадмалыг ихэвчлэн эхний хэсэгт (бүтэн видеоны
+  // цагаар) оруулдаг. Энэ хэсэгт хадмал байхгүй бол тэр ангийнхыг хэрэглэнэ.
+  let subtitleInfo = subs;
+  if (part.start && !subs.subtitles?.length) {
+    const { data: all } = await d.from('episodes').select('ep, video_url').eq('series_id', seriesId).order('ep');
+    const src = (all ?? []).find((r) => r.ep !== ep && parsePart(r.video_url).base === part.base);
+    if (src) {
+      const other = await subtitlesFor(d, seriesId, src.ep);
+      if (other.subtitles?.length) subtitleInfo = { ...other, subtitleStyle: subs.subtitleStyle ?? other.subtitleStyle };
+    }
+  }
+
   const freeEpisode = ep <= series.free_episodes;
   const previewSeconds = Math.max(0, series.free_minutes || 0) * 60;
 
-  if (isAdmin || access.subscribed || access.owned || freeEpisode) {
-    const s = signBunnyUrl(row.video_url, FULL_TTL);
-    return json({ url: s.url, mode: 'full', expires: s.expires, ...subs });
+  if (isAdmin || access.subscribed || access.owned) {
+    const s = signBunnyUrl(part.base, FULL_TTL);
+    return json({ url: s.url, mode: 'full', expires: s.expires, ...partWindow, ...subtitleInfo });
+  }
+
+  if (freeEpisode) {
+    // Үнэгүй хэсэг: холбоос зөвхөн тэр хэсгийн урттай тэнцэх хугацаанд хүчинтэй
+    const ttl = part.end ? Math.min(FULL_TTL, part.end - part.start + PREVIEW_EXTRA) : FULL_TTL;
+    const s = signBunnyUrl(part.base, ttl);
+    return json({ url: s.url, mode: 'full', expires: s.expires, ...partWindow, ...subtitleInfo });
   }
 
   if (previewSeconds > 0) {
-    const s = signBunnyUrl(row.video_url, previewSeconds + PREVIEW_EXTRA);
-    return json({ url: s.url, mode: 'preview', previewSeconds, expires: s.expires, ...subs });
+    const s = signBunnyUrl(part.base, previewSeconds + PREVIEW_EXTRA);
+    return json({ url: s.url, mode: 'preview', previewSeconds, expires: s.expires, ...partWindow, ...subtitleInfo });
   }
 
   return json({ error: 'subscription required', mode: 'locked' }, 403);
