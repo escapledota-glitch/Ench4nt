@@ -592,62 +592,83 @@ function partLabel(url) {
 }
 
 // ----------------------------------------------------------------------
-// Нэг видеог хэд хэдэн анги болгон хуваах.
-// Жишээ: 17:00, 35:00 → 1-р анги 0:00–17:00, 2-р 17:00–35:00, 3-р 35:00–төгсгөл.
+// Нэг видеог хэд хэдэн анги болгох — анги бүрийг тусад нь тохируулна:
+//   • бүтэн видеоны аль хэсэг (эхлэх – дуусах), эсвэл
+//   • тусдаа оруулсан видео (жишээ нь зөвхөн 1-р хэсгийг Bunny-д тусад нь)
 // Анги бүр дуусахад дараагийнх нь өөрөө үргэлжилнэ; үнэгүйгээс хойших нь захиалга шаардана.
 // ----------------------------------------------------------------------
 
-function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
-  // Одоо хуваасан байгаа бол түүнийг нь бөглөнө
-  const rows = Object.keys(videos || {})
-    .map(Number)
-    .sort((a, b) => a - b)
-    .map((ep) => ({ ep, ...parsePart(videos[ep]) }));
-  const windowed = rows.filter((r) => r.start || r.end);
-  const mainBase = windowed[0]?.base || rows[0]?.base || '';
-  const existingCuts = windowed.filter((r) => r.base === mainBase && r.start > 0).map((r) => formatClock(r.start));
-  // Бүтэн видеоноос өөр, цаггүй холбоостой анги = тусдаа (богино) видео
-  const existingOwn = windowed.length
-    ? Object.fromEntries(rows.filter((r) => r.base !== mainBase && !r.start && !r.end).map((r) => [r.ep - 1, r.base]))
-    : {};
+const DEFAULT_ROWS = [
+  { own: '', start: '0:00', end: '17:00' },
+  { own: '', start: '17:00', end: '' },
+];
 
-  const [url, setUrl] = useState(mainBase);
-  const [own, setOwn] = useState(existingOwn);
-  const [cuts, setCuts] = useState(existingCuts.length ? existingCuts.join(', ') : '17:00');
-  const [freeCount, setFreeCount] = useState(existingCuts.length ? Math.max(0, free) : 1);
+function rowsFromVideos(videos) {
+  const list = Object.keys(videos || {})
+    .map(Number)
+    .filter((ep) => String(videos[ep] ?? '').trim())
+    .sort((x, y) => x - y)
+    .map((ep) => parsePart(videos[ep]));
+  const windowed = list.filter((r) => r.start || r.end);
+  if (!windowed.length) return { base: list[0]?.base || '', rows: DEFAULT_ROWS };
+  const base = windowed[0].base;
+  return {
+    base,
+    rows: list.map((r) =>
+      r.base === base
+        ? { own: '', start: formatClock(r.start), end: r.end ? formatClock(r.end) : '' }
+        : { own: r.base, start: '', end: '' }
+    ),
+  };
+}
+
+function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
+  const initial = rowsFromVideos(videos);
+  const [url, setUrl] = useState(initial.base);
+  const [rows, setRows] = useState(initial.rows);
+  const [freeCount, setFreeCount] = useState(initial.rows === DEFAULT_ROWS ? 1 : Math.max(0, free));
   const [saving, setSaving] = useState(false);
 
-  const times = cuts
-    .split(/[,\s]+/)
-    .filter(Boolean)
-    .map(parseClock);
-  const bad = times.some((t) => !Number.isFinite(t) || t <= 0);
-  const sorted = [...new Set(times)].sort((a, b) => a - b);
-  const bounds = [0, ...sorted];
-  const parts = bounds.map((start, i) => ({ start, end: bounds[i + 1] || 0 }));
+  const setRow = (i, key) => (e) => setRows((r) => r.map((row, j) => (j === i ? { ...row, [key]: e.target.value } : row)));
+
+  const addRow = () =>
+    setRows((r) => {
+      // шинэ анги өмнөх ангийн дуусах цагаас эхэлнэ
+      const prev = r[r.length - 1];
+      return [...r, { own: '', start: prev?.end || '', end: '' }];
+    });
+  const removeRow = (i) => setRows((r) => (r.length > 1 ? r.filter((_, j) => j !== i) : r));
+
   const base = url.trim().replace(/#.*$/, '');
-  const ownBad = parts.some((_, i) => isEmbedLink(own[i]));
-  const ok = !!base && !bad && !isEmbedLink(base) && !ownBad;
-  const freeN = Math.min(parts.length, Math.max(0, Math.round(Number(freeCount) || 0)));
+  const checked = rows.map((row) => {
+    const own = row.own.trim().replace(/#.*$/, '');
+    if (own) return { own, error: isEmbedLink(own) ? 'embed холбоос биш, .m3u8 хуулна уу' : '' };
+    const start = row.start.trim() ? parseClock(row.start) : 0;
+    const end = row.end.trim() ? parseClock(row.end) : 0;
+    let error = '';
+    if (!Number.isFinite(start) || !Number.isFinite(end)) error = 'Цагийг 17:00 эсвэл 1:05:30 гэж бичнэ';
+    else if (end && end <= start) error = 'Дуусах цаг эхлэхээс хойш байх ёстой';
+    else if (!base) error = 'Дээр бүтэн видеоны холбоос оруулна уу';
+    return { start, end, error };
+  });
+  const ok = rows.length > 0 && checked.every((c) => !c.error) && !isEmbedLink(base);
+  const freeN = Math.min(rows.length, Math.max(0, Math.round(Number(freeCount) || 0)));
 
   const apply = async () => {
     setSaving(true);
     try {
       const next = {};
-      parts.forEach((pt, i) => {
-        // Тусдаа видео өгсөн бол тэр анги зөвхөн тэр (богино) видеог тоглуулна —
-        // бүтэн киноны холбоос үнэгүй үзэгчид огт очихгүй
-        const mine = String(own[i] ?? '').trim().replace(/#.*$/, '');
-        next[i + 1] = mine || withPart(base, pt.start, pt.end);
+      checked.forEach((c, i) => {
+        next[i + 1] = c.own || withPart(base, c.start, c.end);
       });
       // илүү үлдсэн хуучин ангиудыг устгана
       const maxOld = Math.max(total, ...Object.keys(videos || {}).map(Number), 0);
-      for (let ep = parts.length + 1; ep <= maxOld; ep += 1) next[ep] = '';
+      for (let ep = rows.length + 1; ep <= maxOld; ep += 1) next[ep] = '';
       await saveEpisodes(seriesId, next);
-      await setEpisodeCount(seriesId, parts.length, freeN);
+      await setEpisodeCount(seriesId, rows.length, freeN);
       const kept = Object.fromEntries(Object.entries(next).filter(([, v]) => v));
-      toast.success(`${parts.length} анги болгон хуваалаа`);
-      onDone(kept, parts.length, freeN);
+      toast.success(`${rows.length} анги хадгалагдлаа`);
+      onDone(kept, rows.length, freeN);
     } catch (e) {
       toast.error(errorText(e));
     } finally {
@@ -660,11 +681,11 @@ function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
       <DialogTitle>Нэг видеог хэд хэдэн анги болгох</DialogTitle>
       <DialogContent>
         <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-          Нэг видеог хуваах цагуудаа бичнэ. Анги дуусахад дараагийнх нь өөрөө үргэлжилнэ. Үнэгүй ангиас хойших нь захиалга (эсвэл худалдан авалт) шаардана.
+          Анги бүрийг тусад нь тохируулна: бүтэн видеоны аль хэсэг (эхлэх – дуусах), эсвэл тусдаа видео. Анги дуусахад дараагийнх нь өөрөө үргэлжилнэ.
         </Typography>
         <Stack spacing={2}>
           <TextField
-            label="Видео холбоос (.m3u8)"
+            label="Бүтэн видеоны холбоос (.m3u8)"
             size="small"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -672,59 +693,62 @@ function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
             error={isEmbedLink(url)}
             fullWidth
           />
-          <TextField
-            label="Хуваах цагууд"
-            size="small"
-            value={cuts}
-            onChange={(e) => setCuts(e.target.value)}
-            error={bad}
-            helperText={bad ? 'Жишээ: 17:00, 35:00 (мин:сек эсвэл цаг:мин:сек)' : 'Таслалаар тусгаарлана. Жишээ: 17:00, 35:00 → 3 анги'}
-            fullWidth
-          />
+
+          {rows.map((row, i) => {
+            const c = checked[i];
+            const isFree = i < freeN;
+            return (
+              <Box
+                key={i}
+                sx={{ p: 1.5, borderRadius: 1.5, border: '1px solid', borderColor: c.error ? 'error.main' : 'divider', bgcolor: 'background.neutral' }}
+              >
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ flex: 1 }}>
+                    {i + 1}-р анги
+                  </Typography>
+                  <Chip size="small" label={isFree ? 'Үнэгүй' : '🔒 Захиалга'} color={isFree ? 'success' : 'warning'} variant="soft" />
+                  <Button size="small" color="inherit" disabled={rows.length <= 1} onClick={() => removeRow(i)} sx={{ minWidth: 0, px: 1 }}>
+                    <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                  </Button>
+                </Stack>
+
+                {!row.own.trim() && (
+                  <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                    <TextField label="Эхлэх" size="small" value={row.start} onChange={setRow(i, 'start')} placeholder="17:00" sx={{ flex: 1 }} />
+                    <TextField label="Дуусах" size="small" value={row.end} onChange={setRow(i, 'end')} placeholder="төгсгөл хүртэл" sx={{ flex: 1 }} />
+                  </Stack>
+                )}
+
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={row.own}
+                  onChange={setRow(i, 'own')}
+                  placeholder="Тусдаа видео холбоос (заавал биш)"
+                  helperText={c.error || (row.own.trim() ? 'Энэ анги тусдаа видеог бүтнээр нь тоглуулна' : undefined)}
+                  error={!!c.error}
+                  sx={{ '& input': { fontSize: 13 } }}
+                />
+              </Box>
+            );
+          })}
+
+          <Button variant="outlined" color="inherit" onClick={addRow} startIcon={<Iconify icon="mingcute:add-line" />}>
+            Анги нэмэх
+          </Button>
+
           <TextField
             label="Үнэгүй анги"
             type="number"
             size="small"
             value={freeCount}
             onChange={(e) => setFreeCount(e.target.value)}
-            slotProps={{ htmlInput: { min: 0, max: parts.length } }}
+            slotProps={{ htmlInput: { min: 0, max: rows.length } }}
             sx={{ width: 160 }}
           />
-          {!bad && (
-            <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'background.neutral' }}>
-              {parts.map((pt, i) => (
-                <Box key={pt.start} sx={{ py: 0.75, '& + &': { borderTop: '1px dashed', borderColor: 'divider' } }}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <Typography variant="subtitle2" sx={{ width: 56 }}>
-                      {i + 1}-р
-                    </Typography>
-                    <Typography variant="body2" sx={{ flex: 1, fontVariantNumeric: 'tabular-nums' }}>
-                      {own[i]?.trim()
-                        ? 'Тусдаа видео (бүтнээрээ)'
-                        : `${formatClock(pt.start)} – ${pt.end ? formatClock(pt.end) : 'төгсгөл хүртэл'}`}
-                    </Typography>
-                    <Chip
-                      size="small"
-                      label={i < freeN ? 'Үнэгүй' : '🔒 Захиалга'}
-                      color={i < freeN ? 'success' : 'warning'}
-                      variant="soft"
-                    />
-                  </Stack>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={own[i] ?? ''}
-                    onChange={(e) => setOwn((o) => ({ ...o, [i]: e.target.value }))}
-                    placeholder="Тусдаа видео холбоос (заавал биш)"
-                    error={isEmbedLink(own[i])}
-                    sx={{ mt: 0.75, '& input': { fontSize: 13 } }}
-                  />
-                </Box>
-              ))}
-            </Box>
-          )}
+
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            🔐 Хамгаалалт: үнэгүй ангид зөвхөн тэр хэсгийг тусад нь Bunny-д оруулаад холбоосыг нь «Тусдаа видео»-д тавина. Ингэвэл үнэгүй үзэгч бүтэн киноны холбоосыг огт авахгүй. Хадмалыг 1-р ангид бүтэн видеоны цагаар оруулахад бүх ангид ажиллана.
+            🔐 Хамгаалалт: үнэгүй ангийг тусад нь Bunny-д оруулаад холбоосыг нь «Тусдаа видео»-д тавина — үнэгүй үзэгч бүтэн киноны холбоосыг огт авахгүй. «Дуусах»-ыг хоосон орхивол видеоны төгсгөл хүртэл тоглоно. Хадмалыг 1-р ангид бүтэн видеоны цагаар оруулахад бүх ангид ажиллана.
           </Typography>
         </Stack>
       </DialogContent>
@@ -733,7 +757,7 @@ function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
           Болих
         </Button>
         <Button variant="contained" disabled={!ok} loading={saving} onClick={apply}>
-          Хуваах ба хадгалах
+          Хадгалах
         </Button>
       </DialogActions>
     </Dialog>
