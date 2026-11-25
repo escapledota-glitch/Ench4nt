@@ -96,7 +96,7 @@ export function DramaBrowseView() {
                 fontWeight: 600,
                 whiteSpace: 'nowrap',
                 cursor: 'pointer',
-                color: genre === g ? '#fff' : C.muted,
+                color: genre === g ? C.ink : C.muted,
                 background: genre === g ? C.grad : C.surface,
               }}
             >

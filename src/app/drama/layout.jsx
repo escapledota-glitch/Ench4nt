@@ -2,7 +2,7 @@ import { DramaLayout } from 'src/sections/drama/drama-layout';
 
 // ----------------------------------------------------------------------
 
-export const viewport = { themeColor: '#0b0712', viewportFit: 'cover' };
+export const viewport = { themeColor: '#0b0a09', viewportFit: 'cover' };
 
 export const metadata = {
   title: '444 Кино',

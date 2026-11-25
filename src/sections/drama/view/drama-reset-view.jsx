@@ -34,7 +34,7 @@ const submitSx = {
   border: 0,
   borderRadius: 6,
   background: C.grad,
-  color: '#fff',
+  color: C.ink,
   fontFamily: 'inherit',
   fontWeight: 700,
   fontSize: 16,

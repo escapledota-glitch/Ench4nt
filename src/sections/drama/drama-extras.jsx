@@ -84,7 +84,7 @@ export function InstallCard({ compact }) {
           <Box sx={{ fontWeight: 700, fontSize: 14 }}>444 Кино апп суулгах</Box>
           <Box sx={{ fontSize: 12, color: C.muted }}>Нүүр дэлгэцээс шууд нээж, мэдэгдэл аваарай</Box>
         </Box>
-        <Box component="button" onClick={onInstall} sx={{ ...pill, background: C.grad, color: '#fff', px: 1.8, height: 36 }}>
+        <Box component="button" onClick={onInstall} sx={{ ...pill, background: C.grad, color: C.ink, px: 1.8, height: 36 }}>
           Суулгах
         </Box>
         {compact && (
@@ -115,7 +115,7 @@ export function InstallCard({ compact }) {
           ['3', <>Баруун дээд буланд <b>Add</b> дарна. Ингээд 444 Кино таны утсан дээр апп шиг харагдана.</>],
         ].map(([n, text]) => (
           <Box key={n} sx={{ display: 'flex', gap: 1.5, mb: 1.5, fontSize: 14, lineHeight: 1.55 }}>
-            <Box sx={{ width: 26, height: 26, borderRadius: '50%', background: C.grad, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+            <Box sx={{ width: 26, height: 26, borderRadius: '50%', background: C.grad, color: C.ink, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
               {n}
             </Box>
             <span>{text}</span>

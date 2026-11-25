@@ -91,7 +91,7 @@ export function PromoPopup() {
           bgcolor: C.surface,
           color: C.text,
           border: `1px solid ${C.line}`,
-          boxShadow: '0 -20px 60px -20px rgba(168,85,247,0.6)',
+          boxShadow: '0 -20px 60px -20px rgba(212,175,106,0.6)',
           pb: { xs: 'calc(env(safe-area-inset-bottom, 0px) + 20px)', md: 3 },
           animation: 'promoUp 420ms cubic-bezier(.2,.8,.2,1)',
           '@keyframes promoUp': { from: { transform: 'translateY(40px)', opacity: 0 }, to: { transform: 'none', opacity: 1 } },
@@ -103,7 +103,7 @@ export function PromoPopup() {
             px: 3,
             pt: 3,
             pb: 2.5,
-            background: 'radial-gradient(circle at 20% 0%, rgba(236,72,153,0.45), transparent 60%), radial-gradient(circle at 90% 20%, rgba(168,85,247,0.5), transparent 55%)',
+            background: 'radial-gradient(circle at 20% 0%, rgba(212,175,106,0.45), transparent 60%), radial-gradient(circle at 90% 20%, rgba(212,175,106,0.5), transparent 55%)',
           }}
         >
           <Box
@@ -184,11 +184,11 @@ export function PromoPopup() {
               justifyContent: 'center',
               gap: 1,
               background: C.grad,
-              color: '#fff',
+              color: C.ink,
               fontWeight: 800,
               fontSize: 16,
               textDecoration: 'none',
-              boxShadow: '0 12px 30px -10px rgba(236,72,153,0.7)',
+              boxShadow: '0 12px 30px -10px rgba(212,175,106,0.7)',
             }}
           >
             <Icon name="crown" size={20} /> {formatPrice(week.price)}-өөр эхлэх

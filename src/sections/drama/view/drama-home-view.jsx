@@ -252,8 +252,8 @@ function Hero({ items, saved, onSave }) {
       )}
 
       {/* Сүүдэр, винетка, ширхэг */}
-      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(to top, ${C.bg} 0%, rgba(7,5,11,0.85) 18%, rgba(7,5,11,0.2) 48%, rgba(7,5,11,0.55) 100%)` }} />
-      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: { xs: 'none', md: 'block' }, background: 'linear-gradient(90deg, rgba(7,5,11,0.92) 0%, rgba(7,5,11,0.55) 38%, transparent 65%)' }} />
+      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(to top, ${C.bg} 0%, rgba(11,10,9,0.85) 18%, rgba(11,10,9,0.2) 48%, rgba(11,10,9,0.55) 100%)` }} />
+      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: { xs: 'none', md: 'block' }, background: 'linear-gradient(90deg, rgba(11,10,9,0.92) 0%, rgba(11,10,9,0.55) 38%, transparent 65%)' }} />
       <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0,0,0,0.55) 100%)' }} />
       <Box
         sx={{
@@ -334,7 +334,7 @@ function Hero({ items, saved, onSave }) {
             sx={{
               mt: 1.75,
               mb: 0,
-              color: 'rgba(246,242,251,0.82)',
+              color: 'rgba(246,241,232,0.82)',
               fontSize: { xs: 14, md: 16 },
               lineHeight: 1.65,
               display: '-webkit-box',
@@ -344,7 +344,7 @@ function Hero({ items, saved, onSave }) {
               maxWidth: 560,
             }}
           >
-            {s.description}
+            {String(s.description || '').replace(/^[\s.,·•–-]+/, '')}
           </Box>
 
           <Box sx={{ mt: 3, display: 'flex', gap: 1.2, alignItems: 'center' }}>
@@ -360,14 +360,14 @@ function Hero({ items, saved, onSave }) {
                 px: 3.5,
                 height: 52,
                 borderRadius: 1.5,
-                bgcolor: '#fff',
-                color: '#0b0712',
+                background: C.grad,
+                color: C.ink,
                 fontWeight: 800,
                 fontSize: 16,
                 textDecoration: 'none',
                 transition: 'transform 200ms ease, box-shadow 200ms ease',
-                boxShadow: '0 10px 40px -10px rgba(255,255,255,0.5)',
-                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 16px 50px -10px rgba(255,255,255,0.6)' },
+                boxShadow: '0 12px 40px -12px rgba(212,175,106,0.7)',
+                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 18px 50px -12px rgba(212,175,106,0.8)' },
               }}
             >
               <Icon name="play" size={22} /> Одоо үзэх
@@ -405,7 +405,7 @@ function Hero({ items, saved, onSave }) {
       </Box>
 
       {/* Дуу асаах, слайд заагч */}
-      <Box sx={{ position: 'absolute', right: { xs: 16, md: 32 }, bottom: { xs: 48, md: 120 }, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+      <Box sx={{ position: 'absolute', right: { xs: 16, md: 32 }, top: { xs: 'calc(env(safe-area-inset-top, 0px) + 72px)', md: 'auto' }, bottom: { xs: 'auto', md: 120 }, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
         {motionOk && videoReady && (
           <RoundButton
             label={muted ? 'Дуу асаах' : 'Дуу хаах'}
@@ -516,14 +516,15 @@ function Thumbs({ items, index, onPick }) {
 
 // ----------------------------------------------------------------------
 
+// Төрөл бүрт зөөлөн, бараан өнгө (тансаг харагдуулахын тулд тод биш)
 const GENRE_TINT = {
-  Романс: ['#ec4899', '#be185d'],
-  'Өшөө авалт': ['#ef4444', '#7f1d1d'],
-  'Уран зөгнөл': ['#8b5cf6', '#312e81'],
-  'Гэр бүл': ['#f59e0b', '#92400e'],
-  Триллер: ['#0ea5e9', '#0c4a6e'],
-  Инээдэм: ['#22c55e', '#14532d'],
-  Түүхэн: ['#d4a373', '#5b3a1e'],
+  Романс: ['#5a2a35', '#1a1210'],
+  'Өшөө авалт': ['#4f1d1d', '#150f0c'],
+  'Уран зөгнөл': ['#2f2a4a', '#120f14'],
+  'Гэр бүл': ['#4d3a1e', '#16110b'],
+  Триллер: ['#1e3340', '#0d1114'],
+  Инээдэм: ['#2a3d2a', '#0f130e'],
+  Түүхэн: ['#4a3a24', '#15100a'],
 };
 
 function GenreTiles({ genres, list }) {
@@ -531,7 +532,7 @@ function GenreTiles({ genres, list }) {
     <Box sx={{ display: 'grid', gap: { xs: 1.25, md: 2 }, gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)', lg: 'repeat(7, 1fr)' } }}>
       {genres.map((g) => {
         const sample = seriesByGenre(g, list)[0];
-        const [a, b] = GENRE_TINT[g] ?? ['#a855f7', '#4c1d95'];
+        const [a, b] = GENRE_TINT[g] ?? ['#3a3024', '#14110d'];
         return (
           <Box
             key={g}
@@ -548,10 +549,11 @@ function GenreTiles({ genres, list }) {
               alignItems: 'flex-end',
               p: 1.5,
               background: `linear-gradient(135deg, ${a}, ${b})`,
+              border: '1px solid rgba(212,175,106,0.22)',
               transition: 'transform 350ms cubic-bezier(.2,.8,.2,1), box-shadow 350ms ease',
               '& img': { transition: 'transform 700ms cubic-bezier(.2,.8,.2,1)' },
               '@media (hover: hover)': {
-                '&:hover': { transform: 'translateY(-4px)', boxShadow: `0 16px 40px -12px ${a}` },
+                '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 16px 40px -14px rgba(212,175,106,0.45)', borderColor: 'rgba(212,175,106,0.55)' },
                 '&:hover img': { transform: 'rotate(8deg) scale(1.08)' },
               },
             }}
@@ -603,8 +605,8 @@ function Spotlight({ series }) {
         }}
       >
         <Box component="img" src={series.backdrop} alt="" loading="lazy" sx={{ position: 'absolute', inset: 0, width: 1, height: 1, objectFit: 'cover' }} />
-        <Box sx={{ position: 'absolute', inset: 0, background: { xs: `linear-gradient(to top, ${C.bg} 10%, rgba(7,5,11,0.55) 60%, rgba(7,5,11,0.2))`, md: 'linear-gradient(90deg, rgba(7,5,11,0.95) 0%, rgba(7,5,11,0.6) 45%, transparent 80%)' } }} />
-        <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 15% 85%, rgba(168,85,247,0.35), transparent 50%)' }} />
+        <Box sx={{ position: 'absolute', inset: 0, background: { xs: `linear-gradient(to top, ${C.bg} 10%, rgba(11,10,9,0.55) 60%, rgba(11,10,9,0.2))`, md: 'linear-gradient(90deg, rgba(11,10,9,0.95) 0%, rgba(11,10,9,0.6) 45%, transparent 80%)' } }} />
+        <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 15% 85%, rgba(212,175,106,0.35), transparent 50%)' }} />
 
         <Box sx={{ position: 'relative', p: { xs: 2.5, md: 6 }, maxWidth: 560, display: 'flex', gap: 3, alignItems: 'flex-end' }}>
           <Box
@@ -628,7 +630,7 @@ function Spotlight({ series }) {
               <Box
                 component={RouterLink}
                 href={`/drama/${series.id}/1`}
-                sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 3, height: 48, borderRadius: 1.5, background: C.grad, color: '#fff', fontWeight: 800, textDecoration: 'none', boxShadow: '0 12px 30px -10px rgba(236,72,153,0.7)' }}
+                sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 3, height: 48, borderRadius: 1.5, background: C.grad, color: C.ink, fontWeight: 800, textDecoration: 'none', boxShadow: '0 12px 30px -10px rgba(212,175,106,0.7)' }}
               >
                 <Icon name="play" size={20} /> 1-р анги үзэх
               </Box>

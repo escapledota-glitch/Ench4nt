@@ -35,15 +35,17 @@ export function BuyButton({ series, sx, onBought }) {
           gap: 1,
           px: 3,
           height: 50,
-          border: 0,
+          // алтан хүрээтэй (үзэх товч нь гол, энэ нь хоёрдогч)
+          border: '1px solid rgba(212,175,106,0.65)',
           borderRadius: 1.5,
-          bgcolor: C.gold,
-          color: '#1a1200',
+          bgcolor: 'rgba(212,175,106,0.08)',
+          color: C.gold,
           fontFamily: 'inherit',
           fontWeight: 800,
           fontSize: 15,
           cursor: 'pointer',
-          boxShadow: '0 10px 30px -10px rgba(251,191,36,0.7)',
+          transition: 'background-color 200ms ease',
+          '&:hover': { bgcolor: 'rgba(212,175,106,0.16)' },
           ...sx,
         }}
       >
@@ -117,7 +119,7 @@ export function BuyDialog({ series, open, onClose, onBought }) {
               <Box sx={{ mt: 1, fontSize: 14, color: C.muted, lineHeight: 1.6 }}>
                 «{series.title}» одоо таных. Хэдэн ч удаа бүтэн үзэж болно.
               </Box>
-              <Box component="button" onClick={close} sx={{ ...btn, mt: 3, width: 1, background: C.grad, color: '#fff' }}>
+              <Box component="button" onClick={close} sx={{ ...btn, mt: 3, width: 1, background: C.grad, color: C.ink }}>
                 <Icon name="play" size={18} /> Үзэх
               </Box>
             </Box>
@@ -140,13 +142,13 @@ export function BuyDialog({ series, open, onClose, onBought }) {
                 <Box
                   component={RouterLink}
                   href={`/drama/login?next=${encodeURIComponent(pathname || '/drama')}`}
-                  sx={{ ...btn, mt: 2.5, background: C.grad, color: '#fff' }}
+                  sx={{ ...btn, mt: 2.5, background: C.grad, color: C.ink }}
                 >
                   Худалдаж авахын тулд нэвтрэх
                 </Box>
               ) : (
                 <>
-                  <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: 'rgba(251,191,36,0.12)', color: '#fcd34d', fontSize: 13, lineHeight: 1.55 }}>
+                  <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: 'rgba(212,175,106,0.12)', color: '#e3c07a', fontSize: 13, lineHeight: 1.55 }}>
                     Туршилтын горим: жинхэнэ мөнгө татахгүй. QPay холбогдсоны дараа энд QR код гарна.
                   </Box>
                   {error && (
@@ -194,9 +196,9 @@ function OfferCard({ icon, tile, title, text, note, price, was, tag, tagBg, hero
         borderRadius: 2.5,
         // онцлох карт: ягаан-нил градиент хүрээ + гэрэлтэлт
         background: hero
-          ? 'linear-gradient(#1a1024, #1a1024) padding-box, linear-gradient(135deg, #fbbf24, #ec4899 50%, #a855f7) border-box'
+          ? 'linear-gradient(#17130e, #17130e) padding-box, linear-gradient(135deg, #f3dca4, #d4af6a 50%, #8a6a32) border-box'
           : 'rgba(255,255,255,0.06)',
-        boxShadow: hero ? '0 12px 40px -12px rgba(236,72,153,0.65)' : 'none',
+        boxShadow: hero ? '0 12px 40px -12px rgba(212,175,106,0.65)' : 'none',
         color: '#fff',
         fontFamily: 'inherit',
         textAlign: 'left',
@@ -217,7 +219,7 @@ function OfferCard({ icon, tile, title, text, note, price, was, tag, tagBg, hero
             py: 0.25,
             borderRadius: 1,
             background: tagBg,
-            color: '#fff',
+            color: tagBg === C.grad ? C.ink : '#fff',
             fontSize: 10.5,
             fontWeight: 800,
             letterSpacing: 0.4,
@@ -272,9 +274,9 @@ export function PaywallOffers({ series, backHere }) {
           href={`/drama/plans?plan=week&next=${backHere}`}
           hero
           tag={off ? `🔥 ${off}% хямдрал` : '🔥 Хямдрал'}
-          tagBg="linear-gradient(90deg, #ef4444, #ec4899)"
+          tagBg="linear-gradient(90deg, #b91c1c, #e0475f)"
           icon="fire"
-          tile="linear-gradient(135deg, #f97316, #ec4899)"
+          tile="linear-gradient(135deg, #f3dca4, #b88a3e)"
           title="7 хоногийн багц"
           text="7 хоногийн турш бүх кино үнэгүй"
           note={`Өдөрт ердөө ${perDay(week.price, 7)}`}
@@ -289,7 +291,7 @@ export function PaywallOffers({ series, backHere }) {
           tag="⭐ Хамгийн ашигтай"
           tagBg={C.grad}
           icon="crown"
-          tile="linear-gradient(135deg, #fbbf24, #f59e0b)"
+          tile="linear-gradient(135deg, #3a3024, #1f1a14)"
           title="1 сарын багц"
           text="Бүтэн сарын турш бүх кино үнэгүй"
           note={`Өдөрт ${perDay(month.price, 30)}`}
@@ -303,7 +305,7 @@ export function PaywallOffers({ series, backHere }) {
             type="button"
             onClick={() => setOpen(true)}
             icon="play"
-            tile="linear-gradient(135deg, #6366f1, #a855f7)"
+            tile="linear-gradient(135deg, #3a3024, #1f1a14)"
             title="Кино худалдан авах"
             text={`Сонгосон киногоо тусад нь ${priceOf(series).toLocaleString('en-US')} төгрөгөөр худалдан авч үзэх боломжтой`}
             price={priceOf(series)}

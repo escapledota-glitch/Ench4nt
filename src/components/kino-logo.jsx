@@ -24,19 +24,20 @@ export function KinoMark({ size = 32, glow = true, sx }) {
         height: size,
         flexShrink: 0,
         display: 'block',
-        filter: glow ? 'drop-shadow(0 0 10px rgba(168,85,247,0.55))' : 'none',
+        filter: glow ? 'drop-shadow(0 0 10px rgba(212,175,106,0.45))' : 'none',
         ...sx,
       }}
     >
       <defs>
         <linearGradient id={`kg-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#a855f7" />
-          <stop offset="1" stopColor="#ec4899" />
+          <stop offset="0" stopColor="#f3dca4" />
+          <stop offset="0.5" stopColor="#d4af6a" />
+          <stop offset="1" stopColor="#9c7638" />
         </linearGradient>
       </defs>
       <rect width="128" height="128" rx="34" fill={`url(#kg-${id})`} />
       <rect x="3" y="3" width="122" height="60" rx="31" fill="#fff" opacity="0.13" />
-      <path d="M50 36 L96 64 L50 92 Z" fill="#fff" />
+      <path d="M50 36 L96 64 L50 92 Z" fill="#1b1408" />
     </Box>
   );
 }
@@ -59,7 +60,7 @@ export function KinoLogo({ height = 32, showKino = true, sx }) {
             fontSize: height * 0.42,
             fontWeight: 800,
             letterSpacing: `${height * 0.1}px`,
-            background: 'linear-gradient(90deg, #c084fc, #ec4899 55%, #fb7185)',
+            background: 'linear-gradient(90deg, #f3dca4, #d4af6a 55%, #b88a3e)',
             WebkitBackgroundClip: 'text',
             backgroundClip: 'text',
             color: 'transparent',

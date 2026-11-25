@@ -677,7 +677,7 @@ export function DramaPlayerView({ id, initialEp }) {
               bgcolor: 'rgba(0,0,0,0.6)',
               cursor: 'pointer',
               animation: 'mutePulse 1.6s ease-in-out infinite',
-              '@keyframes mutePulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(236,72,153,0.5)' }, '50%': { boxShadow: '0 0 0 6px rgba(236,72,153,0)' } },
+              '@keyframes mutePulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(212,175,106,0.5)' }, '50%': { boxShadow: '0 0 0 6px rgba(212,175,106,0)' } },
             }}
           >
             <Icon name="volumeOff" size={18} /> Дуу асаахын тулд хүрнэ үү
@@ -696,7 +696,7 @@ export function DramaPlayerView({ id, initialEp }) {
               borderRadius: 5,
               bgcolor: 'rgba(0,0,0,0.55)',
               backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(251,191,36,0.45)',
+              border: '1px solid rgba(212,175,106,0.45)',
               color: C.gold,
               fontSize: 12,
               fontWeight: 700,
@@ -718,7 +718,7 @@ export function DramaPlayerView({ id, initialEp }) {
               position: 'absolute',
               inset: 0,
               zIndex: 2,
-              bgcolor: previewEnded ? 'rgba(7,5,11,0.78)' : 'transparent',
+              bgcolor: previewEnded ? 'rgba(11,10,9,0.78)' : 'transparent',
               backdropFilter: previewEnded ? 'blur(14px)' : 'none',
               display: 'flex',
               flexDirection: 'column',
@@ -1109,7 +1109,7 @@ function SettingsSheet({ open, onClose, levels, autoP, prefs, onChange }) {
     fontWeight: 700,
     fontSize: 14,
     cursor: 'pointer',
-    color: active ? '#fff' : C.text,
+    color: active ? C.ink : C.text,
     background: active ? C.grad : C.surface2,
   });
 
@@ -1300,7 +1300,7 @@ function EpisodeSheet({ open, onClose, series, current, isSubscribed, onPick }) 
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
-                color: range === r ? '#fff' : C.muted,
+                color: range === r ? C.ink : C.muted,
                 background: range === r ? C.grad : C.surface2,
               }}
             >
@@ -1328,7 +1328,7 @@ function EpisodeSheet({ open, onClose, series, current, isSubscribed, onPick }) 
                 fontWeight: 700,
                 fontSize: 14,
                 cursor: 'pointer',
-                color: active ? '#fff' : C.text,
+                color: active ? C.ink : C.text,
                 background: active ? C.grad : C.surface2,
               }}
             >
@@ -1466,7 +1466,7 @@ function Scrubber({ progress, duration, disabled, hidden, compact, onSeek, onScr
           transform: 'translate(-50%, -50%)',
           borderRadius: '50%',
           bgcolor: '#fff',
-          boxShadow: active ? '0 0 0 6px rgba(236,72,153,0.35), 0 2px 8px rgba(0,0,0,0.5)' : '0 1px 4px rgba(0,0,0,0.5)',
+          boxShadow: active ? '0 0 0 6px rgba(212,175,106,0.35), 0 2px 8px rgba(0,0,0,0.5)' : '0 1px 4px rgba(0,0,0,0.5)',
           transition: 'width 120ms ease, height 120ms ease, box-shadow 120ms ease, opacity 200ms ease',
           opacity: thin ? 0 : 1,
           pointerEvents: 'none',

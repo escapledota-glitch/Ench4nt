@@ -61,7 +61,7 @@ export function DramaNotificationsView() {
         {items?.map((n) => {
           const inner = (
             <>
-              <Box sx={{ width: 40, height: 40, borderRadius: '50%', background: C.grad, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <Box sx={{ width: 40, height: 40, borderRadius: '50%', background: C.grad, color: C.ink, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                 <Icon name="bell" size={18} />
               </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>

@@ -8,8 +8,8 @@
   "scope": "/drama/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0b0712",
-  "theme_color": "#0b0712",
+  "background_color": "#0b0a09",
+  "theme_color": "#0b0a09",
   "icons": [
     { "src": "/kino/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/kino/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

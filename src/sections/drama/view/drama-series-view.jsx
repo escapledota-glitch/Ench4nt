@@ -57,8 +57,8 @@ export function DramaSeriesView({ id }) {
             }}
           />
         </picture>
-        <Box sx={{ position: 'absolute', inset: 0, background: `linear-gradient(to top, ${C.bg} 0%, rgba(7,5,11,0.88) 22%, rgba(7,5,11,0.35) 60%, rgba(7,5,11,0.6) 100%)` }} />
-        <Box sx={{ position: 'absolute', inset: 0, display: { xs: 'none', md: 'block' }, background: 'linear-gradient(90deg, rgba(7,5,11,0.95) 0%, rgba(7,5,11,0.6) 40%, transparent 70%)' }} />
+        <Box sx={{ position: 'absolute', inset: 0, background: `linear-gradient(to top, ${C.bg} 0%, rgba(11,10,9,0.88) 22%, rgba(11,10,9,0.35) 60%, rgba(11,10,9,0.6) 100%)` }} />
+        <Box sx={{ position: 'absolute', inset: 0, display: { xs: 'none', md: 'block' }, background: 'linear-gradient(90deg, rgba(11,10,9,0.95) 0%, rgba(11,10,9,0.6) 40%, transparent 70%)' }} />
 
         <Box
           sx={{
@@ -160,7 +160,7 @@ export function DramaSeriesView({ id }) {
                       fontSize: 13,
                       fontWeight: 600,
                       fontFamily: 'inherit',
-                      color: range === r ? '#fff' : C.muted,
+                      color: range === r ? C.ink : C.muted,
                       background: range === r ? C.grad : C.surface,
                     }}
                   >
@@ -196,7 +196,7 @@ export function DramaSeriesView({ id }) {
                     fontWeight: 700,
                     fontSize: 15,
                     textDecoration: 'none',
-                    color: current ? '#fff' : C.text,
+                    color: current ? C.ink : C.text,
                     background: current ? C.grad : C.surface,
                     border: `1px solid ${current ? 'transparent' : C.line}`,
                     '&:hover': { borderColor: C.accent },
@@ -245,11 +245,11 @@ function PlayButton({ series, lastEp }) {
         height: 50,
         borderRadius: 1.5,
         background: C.grad,
-        color: '#fff',
+        color: C.ink,
         fontWeight: 700,
         fontSize: 15,
         textDecoration: 'none',
-        boxShadow: '0 8px 24px -6px rgba(236,72,153,0.6)',
+        boxShadow: '0 8px 24px -6px rgba(212,175,106,0.6)',
       }}
     >
       <Icon name="play" size={20} />

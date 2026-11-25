@@ -250,8 +250,8 @@ const LogoText = styled('div')({
   marginTop: 6,
   animation: `${glitch} 5s infinite`,
   '& span': {
-    color: '#ec4899',
-    textShadow: '0 0 20px #a855f7, 0 0 40px rgba(236,72,153,0.6)',
+    color: '#e3c07a',
+    textShadow: '0 0 20px rgba(212,175,106,0.8), 0 0 40px rgba(212,175,106,0.45)',
   },
 });
 

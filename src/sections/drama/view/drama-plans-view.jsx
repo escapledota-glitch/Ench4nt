@@ -51,7 +51,7 @@ export function DramaPlansView() {
             px: 1.5,
             py: 0.5,
             borderRadius: 5,
-            bgcolor: 'rgba(251,191,36,0.12)',
+            bgcolor: 'rgba(212,175,106,0.12)',
             color: C.gold,
             fontSize: 13,
             fontWeight: 700,
@@ -130,7 +130,7 @@ export function DramaPlansView() {
                   px: 1.2,
                   py: 0.3,
                   borderRadius: 5,
-                  background: C.grad,
+                  background: C.grad, color: C.ink,
                   fontSize: 11,
                   fontWeight: 800,
                   whiteSpace: 'nowrap',
@@ -179,7 +179,7 @@ export function DramaPlansView() {
                 fontWeight: 700,
                 fontSize: 15,
                 cursor: 'pointer',
-                color: '#fff',
+                color: p.popular ? C.ink : '#fff',
                 background: p.popular ? C.grad : C.surface2,
               }}
             >
@@ -273,7 +273,7 @@ function PayDialog({ plan, onClose, onPay, next }) {
                   gap: 1,
                   borderRadius: 6,
                   background: C.grad,
-                  color: '#fff',
+                  color: C.ink,
                   fontWeight: 700,
                   textDecoration: 'none',
                 }}
@@ -292,7 +292,7 @@ function PayDialog({ plan, onClose, onPay, next }) {
                 <Box sx={{ fontSize: 20, fontWeight: 900 }}>{formatPrice(plan.price)}</Box>
               </Box>
 
-              <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: 'rgba(251,191,36,0.12)', color: '#fcd34d', fontSize: 13, lineHeight: 1.55 }}>
+              <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: 'rgba(212,175,106,0.12)', color: '#e3c07a', fontSize: 13, lineHeight: 1.55 }}>
                 Туршилтын горим: жинхэнэ мөнгө татахгүй. QPay холбогдсоны дараа энд QR код гарна.
               </Box>
 
@@ -320,7 +320,7 @@ function PayDialog({ plan, onClose, onPay, next }) {
                     border: 0,
                     borderRadius: 6,
                     background: C.grad,
-                    color: '#fff',
+                    color: C.ink,
                     fontFamily: 'inherit',
                     fontWeight: 700,
                     fontSize: 15,

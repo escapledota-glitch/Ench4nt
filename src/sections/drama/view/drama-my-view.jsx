@@ -101,7 +101,7 @@ function AccountCard() {
   const card = {
     p: { xs: 2.5, md: 3 },
     borderRadius: 4,
-    background: 'linear-gradient(135deg, rgba(168,85,247,0.25), rgba(236,72,153,0.18))',
+    background: 'linear-gradient(135deg, rgba(212,175,106,0.25), rgba(212,175,106,0.18))',
     border: `1px solid ${C.line}`,
   };
 
@@ -118,7 +118,7 @@ function AccountCard() {
           <Box sx={{ mt: 0.3, fontSize: 14, color: C.muted }}>Нэвтэрч багцаа идэвхжүүлээд бүх ангийг үзээрэй.</Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1, width: { xs: 1, sm: 'auto' } }}>
-          <Box component={RouterLink} href="/drama/login" sx={{ ...btn, flex: 1, background: C.grad, color: '#fff' }}>
+          <Box component={RouterLink} href="/drama/login" sx={{ ...btn, flex: 1, background: C.grad, color: C.ink }}>
             Нэвтрэх
           </Box>
           <Box component={RouterLink} href="/drama/login?mode=register" sx={{ ...btn, flex: 1, bgcolor: 'rgba(255,255,255,0.1)', color: C.text }}>
@@ -137,7 +137,7 @@ function AccountCard() {
             width: 56,
             height: 56,
             borderRadius: '50%',
-            background: C.grad,
+            background: C.grad, color: C.ink,
             display: 'grid',
             placeItems: 'center',
             fontSize: 22,
@@ -170,7 +170,7 @@ function AccountCard() {
           mt: 2.5,
           p: 2,
           borderRadius: 3,
-          bgcolor: 'rgba(11,7,18,0.55)',
+          bgcolor: 'rgba(11,10,9,0.55)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -200,7 +200,7 @@ function AccountCard() {
         <Box
           component="a"
           href="/dashboard/kino"
-          sx={{ ...btn, mt: 1.5, width: 1, bgcolor: 'rgba(11,7,18,0.55)', color: C.gold, border: `1px solid rgba(251,191,36,0.3)` }}
+          sx={{ ...btn, mt: 1.5, width: 1, bgcolor: 'rgba(11,10,9,0.55)', color: C.gold, border: `1px solid rgba(212,175,106,0.3)` }}
         >
           <Icon name="shield" size={18} /> Админ самбар
         </Box>

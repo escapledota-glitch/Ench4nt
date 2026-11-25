@@ -85,7 +85,7 @@ export function DramaLoginView() {
           borderRadius: 4,
           bgcolor: C.surface,
           border: `1px solid ${C.line}`,
-          boxShadow: '0 30px 80px -30px rgba(168,85,247,0.45)',
+          boxShadow: '0 30px 80px -30px rgba(212,175,106,0.45)',
         }}
       >
         <Box sx={{ textAlign: 'center', mb: 3 }}>
@@ -121,7 +121,7 @@ export function DramaLoginView() {
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: 'pointer',
-                color: mode === key ? '#fff' : C.muted,
+                color: mode === key ? C.ink : C.muted,
                 background: mode === key ? C.grad : 'transparent',
               }}
             >
@@ -201,7 +201,7 @@ export function DramaLoginView() {
               border: 0,
               borderRadius: 6,
               background: C.grad,
-              color: '#fff',
+              color: C.ink,
               fontFamily: 'inherit',
               fontWeight: 700,
               fontSize: 16,
@@ -321,7 +321,7 @@ export function Field({ label, value, onChange, end, ...input }) {
 export function Notice({ tone, children }) {
   const colors = {
     ok: ['rgba(34,197,94,0.12)', '#86efac'],
-    warn: ['rgba(251,191,36,0.12)', '#fcd34d'],
+    warn: ['rgba(212,175,106,0.12)', '#e3c07a'],
     error: ['rgba(239,68,68,0.12)', '#fca5a5'],
   }[tone];
   return (

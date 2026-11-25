@@ -13,18 +13,21 @@ import { priceOf, isForSale, formatPrice } from './drama-data';
 // 444 Кино — өнгө, фонт, icon, постер карт, хөдөлгөөн
 // ----------------------------------------------------------------------
 
+// Хар & алтан (luxury) өнгө
 export const C = {
-  bg: '#07050b',
-  surface: '#120d1b',
-  surface2: '#1d1529',
-  line: 'rgba(255,255,255,0.08)',
-  text: '#f6f2fb',
-  muted: 'rgba(246,242,251,0.6)',
-  accent: '#a855f7',
-  accent2: '#ec4899',
-  gold: '#fbbf24',
-  grad: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-  glow: '0 0 0 1px rgba(168,85,247,0.45), 0 18px 50px -12px rgba(168,85,247,0.55), 0 8px 30px -8px rgba(236,72,153,0.45)',
+  bg: '#0b0a09',
+  surface: '#15120e',
+  surface2: '#1f1a14',
+  line: 'rgba(255,236,200,0.09)',
+  text: '#f6f1e8',
+  muted: 'rgba(246,241,232,0.62)',
+  accent: '#d4af6a',
+  accent2: '#e9cf94',
+  gold: '#e3c07a',
+  grad: 'linear-gradient(135deg, #f3dca4 0%, #d4af6a 48%, #a9823f 100%)',
+  glow: '0 0 0 1px rgba(212,175,106,0.45), 0 18px 50px -14px rgba(212,175,106,0.45)',
+  // алтан дэвсгэр дээрх бичгийн өнгө (цагаан нь алтан дээр уншигдахгүй)
+  ink: '#1b1408',
 };
 
 // Кирилл үсэг дэмждэг фонт (global.css-д ачаалагдсан)
@@ -145,9 +148,11 @@ export function Badge({ children, sx }) {
         letterSpacing: 0.6,
         textTransform: 'uppercase',
         lineHeight: 1.3,
-        color: '#fff',
-        background: children === 'Топ' ? 'linear-gradient(135deg,#f59e0b,#ef4444)' : C.grad,
-        boxShadow: '0 4px 14px -4px rgba(236,72,153,0.6)',
+        color: children === 'Топ' ? C.gold : C.ink,
+        background: children === 'Топ' ? 'rgba(15,12,9,0.75)' : C.grad,
+        border: children === 'Топ' ? '1px solid rgba(212,175,106,0.6)' : '1px solid transparent',
+        backdropFilter: 'blur(6px)',
+        boxShadow: '0 4px 14px -6px rgba(212,175,106,0.55)',
         ...sx,
       }}
     >
@@ -157,11 +162,18 @@ export function Badge({ children, sx }) {
 }
 
 // Постерын баруун дээд буланд — үнэ эсвэл "Таных"
-export function PriceTag({ series, sx }) {
+// Үнийн шошго харагдах эсэх (багцтай хүнд үнэ харуулахгүй)
+export function usePriceTagVisible(series) {
   const { owns, isSubscribed } = useDramaAuth();
-  if (!isForSale(series)) return null;
+  if (!isForSale(series)) return false;
+  return !(isSubscribed && !owns(series.id));
+}
+
+export function PriceTag({ series, sx }) {
+  const { owns } = useDramaAuth();
+  const visible = usePriceTagVisible(series);
+  if (!visible) return null;
   const mine = owns(series.id);
-  if (isSubscribed && !mine) return null; // багцтай хүнд үнэ хэрэггүй
 
   return (
     <Box
@@ -177,7 +189,7 @@ export function PriceTag({ series, sx }) {
         fontSize: 11,
         fontWeight: 800,
         lineHeight: 1.3,
-        color: mine ? '#052e16' : '#1a1200',
+        color: mine ? '#052e16' : C.ink,
         bgcolor: mine ? '#4ade80' : C.gold,
         boxShadow: '0 4px 14px -4px rgba(0,0,0,0.6)',
         display: 'inline-flex',
@@ -201,6 +213,7 @@ export function PriceTag({ series, sx }) {
 // ----------------------------------------------------------------------
 
 export function PosterCard({ series, progressEp, width }) {
+  const showPrice = usePriceTagVisible(series);
   const href = progressEp ? `/drama/${series.id}/${progressEp}` : `/drama/${series.id}`;
 
   return (
@@ -243,7 +256,8 @@ export function PosterCard({ series, progressEp, width }) {
         {/* Дээд талын нимгэн гэрэл */}
         <Box sx={{ position: 'absolute', inset: 0, borderRadius: 'inherit', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)' }} />
 
-        {series.badge && <Badge sx={{ position: 'absolute', top: 8, left: 8 }}>{series.badge}</Badge>}
+        {/* Үнийн шошго баруун дээд буланд; хоёулаа байвал тэмдэг нь доор нь (давхцахгүй) */}
+        {series.badge && <Badge sx={{ position: 'absolute', top: showPrice ? 36 : 8, left: 8, zIndex: 1 }}>{series.badge}</Badge>}
         <PriceTag series={series} />
 
         <Box
@@ -363,7 +377,7 @@ export function SectionTitle({ title, href, icon, subtitle }) {
           component="h2"
           sx={{ m: 0, fontSize: { xs: 20, md: 26 }, fontWeight: 900, letterSpacing: -0.5, display: 'flex', alignItems: 'center', gap: 1 }}
         >
-          <Box component="span" sx={{ width: 4, height: { xs: 20, md: 24 }, borderRadius: 2, background: C.grad, flexShrink: 0 }} />
+          <Box component="span" sx={{ width: 4, height: { xs: 20, md: 24 }, borderRadius: 2, background: C.grad, color: C.ink, flexShrink: 0 }} />
           {icon && <Icon name={icon} size={22} sx={{ color: C.accent2 }} />}
           {title}
         </Box>
@@ -423,7 +437,7 @@ export function NotFoundState() {
       <Box
         component={RouterLink}
         href="/drama"
-        sx={{ display: 'inline-block', mt: 3, px: 3, py: 1.3, borderRadius: 6, background: C.grad, color: '#fff', fontWeight: 700, textDecoration: 'none' }}
+        sx={{ display: 'inline-block', mt: 3, px: 3, py: 1.3, borderRadius: 6, background: C.grad, color: C.ink, fontWeight: 700, textDecoration: 'none' }}
       >
         Нүүр хуудас руу
       </Box>

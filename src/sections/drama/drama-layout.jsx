@@ -49,7 +49,7 @@ export function DramaLayout({ children }) {
             fontFamily: FONT,
             WebkitFontSmoothing: 'antialiased',
             pb: isPlayer ? 0 : { xs: 'calc(64px + env(safe-area-inset-bottom, 0px))', md: 0 },
-            '& ::selection': { bgcolor: 'rgba(168,85,247,0.45)' },
+            '& ::selection': { bgcolor: 'rgba(212,175,106,0.45)' },
           }}
         >
           {!isPlayer && <Header pathname={pathname} />}
@@ -104,7 +104,7 @@ function Account() {
           alignItems: 'center',
           borderRadius: 5,
           background: C.grad,
-          color: '#fff',
+          color: C.ink,
           fontWeight: 700,
           fontSize: 14,
           textDecoration: 'none',
@@ -129,7 +129,7 @@ function Account() {
           height: 36,
           borderRadius: '50%',
           background: C.grad,
-          color: '#fff',
+          color: C.ink,
           display: 'grid',
           placeItems: 'center',
           fontWeight: 800,
@@ -184,7 +184,7 @@ function Header({ pathname }) {
         top: 'env(safe-area-inset-top, 0px)',
         zIndex: 20,
         transition: 'background-color 300ms ease, border-color 300ms ease, backdrop-filter 300ms ease',
-        bgcolor: clear ? 'transparent' : 'rgba(7,5,11,0.82)',
+        bgcolor: clear ? 'transparent' : 'rgba(11,10,9,0.82)',
         backgroundImage: clear ? 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' : 'none',
         backdropFilter: clear ? 'none' : 'blur(16px) saturate(1.4)',
         borderBottom: `1px solid ${clear ? 'transparent' : C.line}`,
@@ -320,9 +320,11 @@ function BottomNav({ pathname }) {
         bottom: 0,
         zIndex: 30,
         pb: 'env(safe-area-inset-bottom, 0px)',
-        bgcolor: 'rgba(7,5,11,0.92)',
-        backdropFilter: 'blur(14px)',
-        borderTop: `1px solid ${C.line}`,
+        bgcolor: 'rgba(14,12,10,0.78)',
+        backdropFilter: 'blur(20px) saturate(1.5)',
+        WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
+        borderTop: '1px solid rgba(212,175,106,0.14)',
+        boxShadow: '0 -12px 30px -12px rgba(0,0,0,0.6)',
       }}
     >
       {NAV.map((item) => {
@@ -332,9 +334,18 @@ function BottomNav({ pathname }) {
             key={item.href}
             component={RouterLink}
             href={item.href}
+            // Android дээр товших мэдрэмж (жижиг чичиргээ)
+            onClick={() => {
+              try {
+                navigator.vibrate?.(8);
+              } catch {
+                /* дэмжихгүй */
+              }
+            }}
             sx={{
               flex: 1,
               height: 64,
+              WebkitTapHighlightColor: 'transparent',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -343,11 +354,26 @@ function BottomNav({ pathname }) {
               fontSize: 11,
               fontWeight: 600,
               textDecoration: 'none',
-              color: active ? C.text : C.muted,
-              '& svg': { color: active ? C.accent : 'inherit' },
+              color: active ? C.gold : C.muted,
+              transition: 'color 200ms ease',
+              '&:active .nav-pill': { transform: 'scale(0.9)' },
             }}
           >
-            <Icon name={item.icon} size={24} />
+            {/* идэвхтэй табын ард зөөлөн алтан тойрог */}
+            <Box
+              className="nav-pill"
+              sx={{
+                width: 52,
+                height: 30,
+                borderRadius: 15,
+                display: 'grid',
+                placeItems: 'center',
+                bgcolor: active ? 'rgba(212,175,106,0.16)' : 'transparent',
+                transition: 'background-color 250ms ease, transform 150ms ease',
+              }}
+            >
+              <Icon name={item.icon} size={22} />
+            </Box>
             {item.label}
           </Box>
         );
