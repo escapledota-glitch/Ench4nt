@@ -610,7 +610,13 @@ function rowsFromVideos(videos) {
     .sort((x, y) => x - y)
     .map((ep) => parsePart(videos[ep]));
   const windowed = list.filter((r) => r.start || r.end);
-  if (!windowed.length) return { base: list[0]?.base || '', rows: DEFAULT_ROWS };
+  if (!windowed.length) {
+    if (!list.length) return { base: '', rows: DEFAULT_ROWS };
+    // Хараахан хуваагаагүй: одоо байгаа анги бүр өөрийн холбоосоо хадгална (1-р ангийн
+    // богино видеог "бүтэн видео" гэж андуурахгүй). Дараагийн анги нь бүтэн видеоноос.
+    const rows = list.map((r) => ({ own: r.base, start: '', end: '' }));
+    return { base: '', rows: rows.length === 1 ? [...rows, { own: '', start: '', end: '' }] : rows, fresh: true };
+  }
   const base = windowed[0].base;
   return {
     base,
@@ -626,7 +632,7 @@ function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
   const initial = rowsFromVideos(videos);
   const [url, setUrl] = useState(initial.base);
   const [rows, setRows] = useState(initial.rows);
-  const [freeCount, setFreeCount] = useState(initial.rows === DEFAULT_ROWS ? 1 : Math.max(0, free));
+  const [freeCount, setFreeCount] = useState(initial.rows === DEFAULT_ROWS || initial.fresh ? 1 : Math.max(0, free));
   const [saving, setSaving] = useState(false);
 
   const setRow = (i, key) => (e) => setRows((r) => r.map((row, j) => (j === i ? { ...row, [key]: e.target.value } : row)));
