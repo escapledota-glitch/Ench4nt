@@ -13,6 +13,14 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabase = url && key ? createClient(url, key) : null;
 
+// Утсаар нэвтэрсэн хэрэглэгчийн дотоод имэйл → харагдах утасны дугаар
+const PHONE_EMAIL = /^p(d{8})@phone.444ulaanbaatar.com$/;
+export const phoneOf = (u) => u?.user_metadata?.phone || u?.email?.match(PHONE_EMAIL)?.[1] || '';
+export const contactOf = (u) => {
+  const ph = phoneOf(u);
+  return ph ? `${ph.slice(0, 4)} ${ph.slice(4)}` : u?.email || '';
+};
+
 const AuthContext = createContext(null);
 
 const ERRORS = {
@@ -130,6 +138,12 @@ export function DramaAuthProvider({ children }) {
     if (error) throw error;
   }, []);
 
+  // Утсаар баталгаажсаны дараа серверээс ирсэн нэг удаагийн токеноор нэвтэрнэ
+  const signInWithPhoneToken = useCallback(async (tokenHash) => {
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'email' });
+    if (error) throw error;
+  }, []);
+
   // Нууц үг сэргээх холбоос имэйлээр илгээнэ
   const resetPassword = useCallback(async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -163,7 +177,7 @@ export function DramaAuthProvider({ children }) {
       configured: !!supabase,
       loading,
       user,
-      displayName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+      displayName: user?.user_metadata?.full_name || contactOf(user) || user?.email?.split('@')[0] || '',
       subscription,
       isSubscribed,
       owned,
@@ -174,12 +188,13 @@ export function DramaAuthProvider({ children }) {
       signIn,
       signUp,
       signInWithProvider,
+      signInWithPhoneToken,
       resetPassword,
       updatePassword,
       signOut,
       startTestSubscription,
     };
-  }, [loading, user, subscription, owned, buySeries, signIn, signUp, signInWithProvider, resetPassword, updatePassword, signOut, startTestSubscription]);
+  }, [loading, user, subscription, owned, buySeries, signIn, signUp, signInWithProvider, signInWithPhoneToken, resetPassword, updatePassword, signOut, startTestSubscription]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -9,7 +9,7 @@ import { useCatalog } from '../drama-catalog';
 import { useDramaStore } from '../use-drama-store';
 import { PushCard, InstallCard } from '../drama-extras';
 import { C, Icon, PosterCard, SectionTitle } from '../drama-ui';
-import { useIsAdmin, formatDate, useDramaAuth } from '../drama-auth';
+import { contactOf, useIsAdmin, formatDate, useDramaAuth } from '../drama-auth';
 
 // ----------------------------------------------------------------------
 
@@ -150,7 +150,7 @@ function AccountCard() {
         </Box>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Box sx={{ fontSize: 18, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</Box>
-          <Box sx={{ fontSize: 13, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</Box>
+          <Box sx={{ fontSize: 13, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contactOf(user)}</Box>
         </Box>
         <Box
           component="button"
