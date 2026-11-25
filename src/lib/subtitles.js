@@ -53,21 +53,21 @@ export const looksLikeSubtitles = (vtt) => /-->/.test(vtt);
 // mode:   'band'  = өнгөт/бүдэг тууз бүхэлдээ
 //         'smart' = зөвхөн цагаан бичгийг олж, эргэн тойрных нь зургаар бөглөж бүдгэрүүлнэ
 // timing: 'always' = үргэлж, 'subs' = манай хадмал гарах үед л (padBefore сек өмнөөс, padAfter сек дараа хүртэл)
-// Анхдагч утгууд = "1995" киноны тааруулсан тохиргоо (шинэ кино бүр ингэж эхэлнэ)
+// Анхдагч утгууд = "arliin-haan" киноны тааруулсан тохиргоо (шинэ кино бүр ингэж эхэлнэ)
 export const DEFAULT_SUB_MASK = {
   on: true,
   y: 71,
   h: 26,
-  w: 75,
+  w: 82,
   color: '#000000',
   opacity: 85,
   blur: 12,
   mode: 'smart',
   timing: 'subs',
-  padBefore: 0, // манай хадмалаас хэдэн сек өмнө эхлэх
+  padBefore: 0.5, // манай хадмалаас хэдэн сек өмнө эхлэх
   padAfter: 0, // манай хадмал дууссаны дараа хэдэн сек үргэлжлэх
-  threshold: 202,
-  strength: 10,
+  threshold: 219,
+  strength: 13,
   expand: 4,
   textColor: 'white', // 'white' | 'yellow' | 'bright'
   outline: true, // зөвхөн бараан хүрээтэй (хадмалын) бичиг — цагаан хувцас, гэрэл гэх мэтэд нөлөөлөхгүй
@@ -75,7 +75,7 @@ export const DEFAULT_SUB_MASK = {
 
 export const DEFAULT_SUB_STYLE = {
   x: 51,
-  y: 67,
+  y: 72,
   size: 28,
   color: '#ffffff',
   bg: 'box',
