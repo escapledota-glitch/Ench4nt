@@ -614,11 +614,11 @@ function rowsFromVideos(videos) {
   const base = windowed[0].base;
   return {
     base,
-    rows: list.map((r) =>
-      r.base === base
-        ? { own: '', start: formatClock(r.start), end: r.end ? formatClock(r.end) : '' }
-        : { own: r.base, start: '', end: '' }
-    ),
+    rows: list.map((r) => ({
+      own: r.base === base ? '' : r.base,
+      start: r.start || r.base === base ? formatClock(r.start) : '',
+      end: r.end ? formatClock(r.end) : '',
+    })),
   };
 }
 
@@ -642,14 +642,14 @@ function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
   const base = url.trim().replace(/#.*$/, '');
   const checked = rows.map((row) => {
     const own = row.own.trim().replace(/#.*$/, '');
-    if (own) return { own, error: isEmbedLink(own) ? 'embed холбоос биш, .m3u8 хуулна уу' : '' };
     const start = row.start.trim() ? parseClock(row.start) : 0;
     const end = row.end.trim() ? parseClock(row.end) : 0;
     let error = '';
     if (!Number.isFinite(start) || !Number.isFinite(end)) error = 'Цагийг 17:00 эсвэл 1:05:30 гэж бичнэ';
     else if (end && end <= start) error = 'Дуусах цаг эхлэхээс хойш байх ёстой';
-    else if (!base) error = 'Дээр бүтэн видеоны холбоос оруулна уу';
-    return { start, end, error };
+    else if (own && isEmbedLink(own)) error = 'embed холбоос биш, .m3u8 хуулна уу';
+    else if (!own && !base) error = 'Тусдаа видео эсвэл дээр бүтэн видеоны холбоос оруулна уу';
+    return { url: own || base, start, end, error };
   });
   const ok = rows.length > 0 && checked.every((c) => !c.error) && !isEmbedLink(base);
   const freeN = Math.min(rows.length, Math.max(0, Math.round(Number(freeCount) || 0)));
@@ -659,7 +659,7 @@ function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
     try {
       const next = {};
       checked.forEach((c, i) => {
-        next[i + 1] = c.own || withPart(base, c.start, c.end);
+        next[i + 1] = withPart(c.url, c.start, c.end);
       });
       // илүү үлдсэн хуучин ангиудыг устгана
       const maxOld = Math.max(total, ...Object.keys(videos || {}).map(Number), 0);
@@ -685,7 +685,8 @@ function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
         </Typography>
         <Stack spacing={2}>
           <TextField
-            label="Бүтэн видеоны холбоос (.m3u8)"
+            label="Үндсэн (бүтэн) видео холбоос (.m3u8)"
+            helperText="Тусдаа холбоосгүй ангиуд үүнийг ашиглана. Бүх ангид тусдаа холбоос тавьсан бол хоосон орхиж болно."
             size="small"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -712,23 +713,20 @@ function SplitDialog({ seriesId, videos, total, free, onClose, onDone }) {
                   </Button>
                 </Stack>
 
-                {!row.own.trim() && (
-                  <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                    <TextField label="Эхлэх" size="small" value={row.start} onChange={setRow(i, 'start')} placeholder="17:00" sx={{ flex: 1 }} />
-                    <TextField label="Дуусах" size="small" value={row.end} onChange={setRow(i, 'end')} placeholder="төгсгөл хүртэл" sx={{ flex: 1 }} />
-                  </Stack>
-                )}
-
                 <TextField
                   size="small"
                   fullWidth
                   value={row.own}
                   onChange={setRow(i, 'own')}
                   placeholder="Тусдаа видео холбоос (заавал биш)"
-                  helperText={c.error || (row.own.trim() ? 'Энэ анги тусдаа видеог бүтнээр нь тоглуулна' : undefined)}
+                  helperText={c.error || (row.own.trim() ? 'Энэ анги тусдаа видеогоо доорх цагаар тоглуулна (хоосон = эхнээс нь / төгсгөл хүртэл)' : 'Хоосон бол дээрх бүтэн видеог ашиглана')}
                   error={!!c.error}
                   sx={{ '& input': { fontSize: 13 } }}
                 />
+                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                  <TextField label="Эхлэх" size="small" value={row.start} onChange={setRow(i, 'start')} placeholder="0:00" sx={{ flex: 1 }} />
+                  <TextField label="Дуусах" size="small" value={row.end} onChange={setRow(i, 'end')} placeholder="төгсгөл хүртэл" sx={{ flex: 1 }} />
+                </Stack>
               </Box>
             );
           })}
