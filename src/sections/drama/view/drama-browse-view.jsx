@@ -107,7 +107,7 @@ export function DramaBrowseView() {
       </Box>
 
       <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-        <Box sx={{ fontSize: 13, color: C.muted }}>{list.length} цуврал</Box>
+        <Box sx={{ fontSize: 13, color: C.muted }}>Нийт {list.length}</Box>
         <Box sx={{ display: 'flex', gap: 0.5, bgcolor: C.surface, borderRadius: 5, p: 0.4 }}>
           {[
             ['popular', 'Алдартай'],
@@ -154,7 +154,7 @@ export function DramaBrowseView() {
       ) : (
         <Box sx={{ py: 10, textAlign: 'center', color: C.muted }}>
           <Icon name="search" size={40} sx={{ mx: 'auto', mb: 1.5, opacity: 0.5 }} />
-          “{query}” гэсэн цуврал олдсонгүй
+          «{query}» нэртэй кино, цуврал олдсонгүй
         </Box>
       )}
     </Box>

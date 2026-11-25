@@ -117,7 +117,7 @@ export function BuyDialog({ series, open, onClose, onBought }) {
               </Box>
               <Box sx={{ mt: 2, fontSize: 20, fontWeight: 800 }}>Амжилттай!</Box>
               <Box sx={{ mt: 1, fontSize: 14, color: C.muted, lineHeight: 1.6 }}>
-                «{series.title}» одоо таных. Хэдэн ч удаа бүтэн үзэж болно.
+                «{series.title}» одоо таных боллоо. Хүссэн үедээ, хэдэн ч удаа үзэх боломжтой.
               </Box>
               <Box component="button" onClick={close} sx={{ ...btn, mt: 3, width: 1, background: C.grad, color: C.ink }}>
                 <Icon name="play" size={18} /> Үзэх
@@ -135,7 +135,7 @@ export function BuyDialog({ series, open, onClose, onBought }) {
               </Box>
 
               <Box sx={{ mt: 2, fontSize: 13, color: C.muted, lineHeight: 1.6 }}>
-                Нэг удаа төлөөд энэ {series.episodes > 1 ? 'цувралын бүх ангийг' : 'киног'} хугацаагүй бүтэн үзнэ.
+                Нэг удаа төлөөд энэ {series.episodes > 1 ? 'цувралын бүх ангийг' : 'киног'} хугацаагүй үзэх боломжтой.
               </Box>
 
               {!user ? (
@@ -144,12 +144,12 @@ export function BuyDialog({ series, open, onClose, onBought }) {
                   href={`/drama/login?next=${encodeURIComponent(pathname || '/drama')}`}
                   sx={{ ...btn, mt: 2.5, background: C.grad, color: C.ink }}
                 >
-                  Худалдаж авахын тулд нэвтрэх
+                  Худалдаж авахын тулд нэвтэрнэ үү
                 </Box>
               ) : (
                 <>
                   <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: 'rgba(212,175,106,0.12)', color: '#e3c07a', fontSize: 13, lineHeight: 1.55 }}>
-                    Туршилтын горим: жинхэнэ мөнгө татахгүй. QPay холбогдсоны дараа энд QR код гарна.
+                    Туршилтын горим: бодит төлбөр хийгдэхгүй. QPay холбогдсоны дараа энд QR код гарна.
                   </Box>
                   {error && (
                     <Box role="alert" sx={{ mt: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(239,68,68,0.12)', color: '#fca5a5', fontSize: 13 }}>

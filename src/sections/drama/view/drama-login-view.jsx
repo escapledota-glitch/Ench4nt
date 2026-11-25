@@ -54,7 +54,7 @@ export function DramaLoginView() {
     setInfo('');
 
     if (mode === 'register' && !name.trim()) return setError('Нэрээ оруулна уу.');
-    if (password.length < 6) return setError('Нууц үг хамгийн багадаа 6 тэмдэгт байна.');
+    if (password.length < 6) return setError('Нууц үг хамгийн багадаа 6 тэмдэгттэй байх ёстой.');
 
     setBusy(true);
     try {

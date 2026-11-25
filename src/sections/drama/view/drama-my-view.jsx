@@ -53,7 +53,7 @@ export function DramaMyView() {
 
       {ownedList.length > 0 && (
         <Box sx={{ mt: 4 }}>
-          <SectionTitle title="Худалдаж авсан" subtitle="Хугацаагүй, хэдэн ч удаа үзнэ" />
+          <SectionTitle title="Худалдаж авсан" subtitle="Хугацаагүй, хүссэн үедээ үзнэ" />
           <Box sx={grid}>
             {ownedList.map((s) => (
               <PosterCard key={s.id} series={s} />
@@ -186,8 +186,8 @@ function AccountCard() {
               {isSubscribed
                 ? `${formatDate(subscription.expires_at)} хүртэл идэвхтэй`
                 : subscription
-                  ? `Багц ${formatDate(subscription.expires_at)}-нд дууссан`
-                  : 'Цуврал бүрийн эхний ангиуд л нээлттэй'}
+                  ? `Багцын хугацаа дууссан (${formatDate(subscription.expires_at)})`
+                  : 'Зөвхөн эхний ангиуд үнэгүй нээлттэй'}
             </Box>
           </Box>
         </Box>

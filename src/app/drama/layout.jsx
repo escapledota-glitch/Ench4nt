@@ -6,6 +6,7 @@ export const viewport = { themeColor: '#0b0a09', viewportFit: 'cover' };
 
 export const metadata = {
   title: '444 Кино',
+  description: 'Хамгийн сонирхолтой богино цуврал кино утсаараа хаанаас ч, хэзээ ч үзээрэй.',
   applicationName: '444 Кино',
   manifest: '/kino/manifest.webmanifest',
   icons: {
@@ -13,7 +14,7 @@ export const metadata = {
     apple: [{ url: '/kino/apple-touch-icon.png', sizes: '180x180' }],
   },
   appleWebApp: { capable: true, title: '444 Кино', statusBarStyle: 'black-translucent' },
-  openGraph: { siteName: '444 Кино', locale: 'mn_MN' },
+  openGraph: { siteName: '444 Кино', locale: 'mn_MN', description: 'Хамгийн сонирхолтой богино цуврал кино утсаараа хаанаас ч, хэзээ ч үзээрэй.' },
 };
 
 export default function Layout({ children }) {

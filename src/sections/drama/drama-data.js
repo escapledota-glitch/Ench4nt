@@ -18,7 +18,7 @@ export const DEFAULT_PRICE = 5900;
 export const PLANS = [
   { id: 'week', name: '7 хоног', price: 6900, was: 13000, period: '7 хоног', note: 'Хямдрал' },
   { id: 'month', name: '1 сар', price: 25900, period: 'сар', note: 'Бүх цуврал хязгааргүй', popular: true },
-  { id: 'year', name: '1 жил', price: 79000, period: 'жил', note: 'Жилээр хамгийн хямд' },
+  { id: 'year', name: '1 жил', price: 79000, period: 'жил', note: 'Хамгийн хэмнэлттэй' },
 ];
 
 // Админы "сарын орлого" тооцоонд: багц бүрийн 1 сард ногдох үнэ
@@ -30,9 +30,9 @@ export const MONTHLY_VALUE = {
 
 export const PLAN_BENEFITS = [
   'Бүх цувралын бүх анги',
-  'Шинэ анги хамгийн түрүүнд',
-  'Сурталчилгаагүй',
-  'Утас, компьютер дээр үзэх',
+  'Шинэ ангийг хамгийн түрүүнд үзнэ',
+  'Зар сурталчилгаагүй',
+  'Утас, компьютер дээр үзэх боломжтой',
 ];
 
 export const planName = (id) => PLANS.find((p) => p.id === id)?.name ?? id;
@@ -274,9 +274,9 @@ export function freeLabel(series) {
   const mins = Number(series?.freeMinutes) || 0;
   const total = series?.episodes ?? 1;
   if (eps >= total) return 'Бүтэн үнэгүй';
-  if (total === 1) return mins > 0 ? `Эхний ${mins} минут үнэгүй` : 'Зөвхөн багцтай';
-  if (eps > 0) return mins > 0 ? `Эхний ${eps} анги үнэгүй · бусад нь ${mins} мин` : `Эхний ${eps} анги үнэгүй`;
-  return mins > 0 ? `Анги бүрийн эхний ${mins} минут үнэгүй` : 'Зөвхөн багцтай';
+  if (total === 1) return mins > 0 ? `Эхний ${mins} минут үнэгүй` : 'Зөвхөн багцаар үзнэ';
+  if (eps > 0) return mins > 0 ? `Эхний ${eps} анги үнэгүй · бусад ангийн эхний ${mins} минут` : `Эхний ${eps} анги үнэгүй`;
+  return mins > 0 ? `Анги бүрийн эхний ${mins} минут үнэгүй` : 'Зөвхөн багцаар үзнэ';
 }
 
 export const featuredSeries = (list = SERIES) => {

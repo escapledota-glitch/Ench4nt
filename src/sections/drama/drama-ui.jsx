@@ -439,7 +439,7 @@ export function NotFoundState() {
         href="/drama"
         sx={{ display: 'inline-block', mt: 3, px: 3, py: 1.3, borderRadius: 6, background: C.grad, color: C.ink, fontWeight: 700, textDecoration: 'none' }}
       >
-        Нүүр хуудас руу
+        Нүүр хуудас руу буцах
       </Box>
     </Box>
   );

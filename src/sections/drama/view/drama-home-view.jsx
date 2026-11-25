@@ -48,7 +48,7 @@ export function DramaHomeView() {
         )}
 
         <Row>
-          <SectionTitle title="Топ 10" subtitle="Энэ долоо хоногт хамгийн их үзсэн" icon="fire" />
+          <SectionTitle title="Топ 10" subtitle="Энэ долоо хоногт хамгийн их үзэгдсэн" icon="fire" />
           <HScroll gap={{ xs: 1, md: 2 }}>
             {topSeries(list).map((s, i) => (
               <RankCard key={s.id} series={s} rank={i + 1} />

@@ -60,7 +60,7 @@ export function DramaPlansView() {
           <Icon name="crown" size={14} /> 444 Кино Premium
         </Box>
         <Box component="h1" sx={{ m: 0, mt: 1.5, fontSize: { xs: 26, md: 38 }, fontWeight: 900, lineHeight: 1.15 }}>
-          Бүх цувралыг хязгааргүй үз
+          Бүх цувралыг хязгааргүй үзээрэй
         </Box>
         <Box sx={{ mt: 1.2, color: C.muted, fontSize: { xs: 14, md: 16 }, lineHeight: 1.6 }}>
           Цуврал бүрийн эхний {FREE_EPISODES} анги үнэгүй. Багц авснаар бүх анги нээгдэнэ.
@@ -136,7 +136,7 @@ export function DramaPlansView() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                Санал болгож байна
+                Санал болгох
               </Box>
             )}
             <Box sx={{ flex: 1 }}>

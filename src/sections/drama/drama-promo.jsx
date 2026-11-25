@@ -121,7 +121,7 @@ export function PromoPopup() {
           <Box sx={{ mt: 1.5, fontSize: 24, fontWeight: 900, lineHeight: 1.15, letterSpacing: -0.5 }}>
             Бүх цувралыг
             <br />
-            хязгааргүй үз
+            хязгааргүй үзээрэй
           </Box>
           <Box sx={{ mt: 0.75, fontSize: 14, color: 'rgba(246,242,251,0.78)' }}>Багц аваад бүх кино, цувралын бүх ангийг үзээрэй.</Box>
         </Box>

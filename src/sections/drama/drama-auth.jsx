@@ -18,8 +18,8 @@ const AuthContext = createContext(null);
 const ERRORS = {
   'Invalid login credentials': 'Имэйл эсвэл нууц үг буруу байна.',
   'User already registered': 'Энэ имэйлээр бүртгэл үүссэн байна. Нэвтэрнэ үү.',
-  'Email not confirmed': 'Имэйлээ баталгаажуулна уу. Таны имэйл рүү холбоос илгээсэн.',
-  'Password should be at least 6 characters': 'Нууц үг хамгийн багадаа 6 тэмдэгт байна.',
+  'Email not confirmed': 'Имэйлээ баталгаажуулна уу. Баталгаажуулах холбоосыг таны имэйл рүү илгээсэн.',
+  'Password should be at least 6 characters': 'Нууц үг хамгийн багадаа 6 тэмдэгттэй байх ёстой.',
   'Unable to validate email address: invalid format': 'Имэйл хаяг буруу байна.',
   'New password should be different from the old password': 'Шинэ нууц үг хуучнаасаа өөр байх ёстой.',
   'Auth session missing': 'Холбоосны хугацаа дууссан байна. Дахин илгээнэ үү.',

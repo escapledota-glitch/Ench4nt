@@ -290,7 +290,7 @@ function Footer() {
         <Box sx={{ maxWidth: 360 }}>
           <Logo />
           <Box sx={{ mt: 1.5, fontSize: 13, color: C.muted, lineHeight: 1.6 }}>
-            Монгол богино цуврал, кино — утсандаа хаанаас ч, хэзээ ч үзээрэй.
+            Хамгийн сонирхолтой богино цуврал кино утсаараа хаанаас ч, хэзээ ч үзээрэй.
           </Box>
         </Box>
         <Box component="nav" sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, md: 3 }, alignContent: 'flex-start' }}>

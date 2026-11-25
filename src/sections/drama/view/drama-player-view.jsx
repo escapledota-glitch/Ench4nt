@@ -632,7 +632,7 @@ export function DramaPlayerView({ id, initialEp }) {
               gap: { xs: 4, sm: 5 },
             }}
           >
-            <CenterButton label="10 секунд буцаах" onClick={() => seek(-10)} size={56}>
+            <CenterButton label="10 секунд ухраах" onClick={() => seek(-10)} size={56}>
               <SkipIcon back />
             </CenterButton>
             <CenterButton
@@ -680,7 +680,7 @@ export function DramaPlayerView({ id, initialEp }) {
               '@keyframes mutePulse': { '0%,100%': { boxShadow: '0 0 0 0 rgba(212,175,106,0.5)' }, '50%': { boxShadow: '0 0 0 6px rgba(212,175,106,0)' } },
             }}
           >
-            <Icon name="volumeOff" size={18} /> Дуу асаахын тулд хүрнэ үү
+            <Icon name="volumeOff" size={18} /> Дуу асаахын тулд дарна уу
           </Box>
         )}
 
@@ -707,7 +707,7 @@ export function DramaPlayerView({ id, initialEp }) {
             }}
           >
             <Icon name="crown" size={14} />
-            Үнэгүй: {formatTime(Math.max(0, previewLimit - partTime))} үлдлээ
+            Үнэгүй үзэх хугацаа: {formatTime(Math.max(0, previewLimit - partTime))}
           </Box>
         )}
 
@@ -872,7 +872,7 @@ export function DramaPlayerView({ id, initialEp }) {
               <Icon name="list" size={18} /> Бүх анги ({total})
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, opacity: 0.75, fontSize: 12 }}>
-              Дээш шудраад дараагийн анги <Icon name="chevronRight" size={14} sx={{ transform: 'rotate(-90deg)' }} />
+              Дараагийн анги — дээш шударна уу <Icon name="chevronRight" size={14} sx={{ transform: 'rotate(-90deg)' }} />
             </Box>
           </Box>
         </Box>
@@ -920,8 +920,8 @@ export function DramaPlayerView({ id, initialEp }) {
           >
             <Box component="img" src="/kino/icon-192.png" alt="" sx={{ width: 36, height: 36, borderRadius: 1.5, flexShrink: 0 }} />
             <Box>
-              <b>100% бүтэн дэлгэцээр үзэх үү?</b> Safari-ийн доод хэсэгт <b>Хуваалцах</b> (□↑) →{' '}
-              <b>Add to Home Screen</b> дарж 444 Кино-г суулгаарай. Апп-аас үзэхэд дэлгэц бүхэлдээ кино болно.
+              <b>Бүтэн дэлгэцээр үзэх үү?</b> Safari-ийн доод хэсэгт <b>Хуваалцах</b> (□↑) →{' '}
+              <b>Add to Home Screen</b> дарж 444 Кино-г суулгаарай. Аппаас үзэхэд кино дэлгэцийг бүтэн дүүргэнэ.
             </Box>
           </Box>
         )}
