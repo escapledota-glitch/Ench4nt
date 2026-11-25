@@ -389,6 +389,10 @@ export function StyleControls({ style, onChange }) {
                 <Row label="Дараа нь үргэлжлэх (хуучин бичиг бүрэн арилтал)" value={`${mask.padAfter} сек`}>
                   <Slider value={mask.padAfter} min={0} max={5} step={0.1} onChange={setMask('padAfter')} />
                 </Row>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Шалгахдаа урьдчилан харах видеог ▶ тоглуулна уу — тоглож байхад жинхэнэ цагаар ажиллана. Зогсоосон үед
+                  тааруулахад зориулж үргэлж харагдана.
+                </Typography>
               </>
             )}
 

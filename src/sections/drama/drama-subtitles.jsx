@@ -149,6 +149,26 @@ export function useCueState(videoRef, cues, delay = 0, before = 0, after = 0) {
   return state;
 }
 
+// Видео зогссон эсэх (зөвхөн enabled үед дагана)
+function usePaused(videoRef, enabled) {
+  const [paused, setPaused] = useState(true);
+  useEffect(() => {
+    const v = videoRef?.current;
+    if (!enabled || !v) return undefined;
+    const sync = () => setPaused(v.paused);
+    sync();
+    v.addEventListener('play', sync);
+    v.addEventListener('pause', sync);
+    v.addEventListener('playing', sync);
+    return () => {
+      v.removeEventListener('play', sync);
+      v.removeEventListener('pause', sync);
+      v.removeEventListener('playing', sync);
+    };
+  }, [videoRef, enabled]);
+  return paused;
+}
+
 // Зурагны байрлалд наасан давхарга
 function PictureLayer({ box, children }) {
   if (!box) return children;
@@ -203,7 +223,7 @@ function boxSum(src, dst, W, H, r, horizontal) {
   }
 }
 
-export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, expand = 2, textColor = 'white', outline = true }) {
+export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, expand = 2, textColor = 'white', outline = true, memory = null }) {
   const N = W * H;
   let mask = new Float32Array(N);
   for (let i = 0; i < N; i += 1) {
@@ -239,6 +259,15 @@ export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, ex
     boxSum(t2, near3, W, H, 3, false);
     for (let i = 0; i < N; i += 1) if (mask[i] && !(near[i] > 0 || near3[i] > 2)) mask[i] = 0;
   }
+  // Сүүлийн хэдэн кадрт илэрсэн бичгийг богино хугацаанд барина — үсэг хагас
+  // илрээд анивчих, хуучин бичиг арилах үед "сүүдэр" үлдэхийг багасгана.
+  if (memory && memory.seen?.length === N) {
+    const { seen, now, hold = 350 } = memory;
+    for (let i = 0; i < N; i += 1) {
+      if (mask[i]) seen[i] = now;
+      else if (now - seen[i] < hold) mask[i] = 1;
+    }
+  }
   // Ирмэгийг томруулна (үсгийн хар хүрээ, сүүдрийг ч хамарна)
   if (expand > 0) {
     const tmp = new Float32Array(N);
@@ -263,14 +292,20 @@ export function inpaintWhiteText(data, W, H, { threshold = 200, strength = 8, ex
     boxSum(t, o, W, H, strength, false);
     return o;
   });
+  // Ирмэгийг 1px зөөлрүүлнэ (хурц хил харагдахгүй)
+  const ring1 = new Float32Array(N);
+  const ring = new Float32Array(N);
+  boxSum(mask, ring1, W, H, 1, true);
+  boxSum(ring1, ring, W, H, 1, false);
   const out = new ImageData(W, H);
   for (let i = 0; i < N; i += 1) {
     const ww = outCh[3][i];
-    if (mask[i] && ww > 0.5) {
+    const edge = !mask[i] && ring[i] > 0;
+    if ((mask[i] || edge) && ww > 0.5) {
       out.data[i * 4] = outCh[0][i] / ww;
       out.data[i * 4 + 1] = outCh[1][i] / ww;
       out.data[i * 4 + 2] = outCh[2][i] / ww;
-      out.data[i * 4 + 3] = 255;
+      out.data[i * 4 + 3] = mask[i] ? 255 : 110;
     }
   }
   return out;
@@ -293,6 +328,7 @@ function SmartTextBlur({ videoRef, mask, active, onFail }) {
     let raf;
     let last = -1;
     let lastRun = 0;
+    const memory = { seen: null, now: 0 };
 
     const frame = (now) => {
       raf = requestAnimationFrame(frame);
@@ -301,6 +337,7 @@ function SmartTextBlur({ videoRef, mask, active, onFail }) {
       const vh = v.videoHeight;
       if (!vw || !vh || v.readyState < 2) return;
       if (v.paused && v.currentTime === last) return; // зогссон үед дахин боловсруулахгүй
+      const jumped = Math.abs(v.currentTime - last) > 1; // гүйлгэсэн бол хуучин санах ойг арилгана
       last = v.currentTime;
       lastRun = now;
 
@@ -315,11 +352,14 @@ function SmartTextBlur({ videoRef, mask, active, onFail }) {
         work.height = H;
         out.width = W;
         out.height = H;
+        memory.seen = null;
       }
+      if (!memory.seen || jumped) memory.seen = new Float32Array(W * H).fill(-1e9);
+      memory.now = now;
       try {
         wctx.drawImage(v, sx, sy, sw, sh, 0, 0, W, H);
         const img = wctx.getImageData(0, 0, W, H);
-        octx.putImageData(inpaintWhiteText(img.data, W, H, { threshold, strength, expand, textColor, outline }), 0, 0);
+        octx.putImageData(inpaintWhiteText(img.data, W, H, { threshold, strength, expand, textColor, outline, memory }), 0, 0);
       } catch {
         // Видеоны зургийг унших эрхгүй (CORS) — энгийн бүдэг тууз руу шилжинэ
         cancelAnimationFrame(raf);
@@ -366,7 +406,8 @@ export function CoverMask({ style, box, visible = true, videoRef, guide = false 
           transform: 'translate(-50%, -50%)',
           pointerEvents: 'none',
           opacity: visible || guide ? 1 : 0,
-          transition: 'opacity 140ms ease',
+          // гарахдаа шууд (хуучин бичиг анивчихгүй), алга болохдоо зөөлөн
+          transition: visible || guide ? 'none' : 'opacity 160ms ease',
           ...(!smart && {
             bgcolor: rgba(m.color, m.opacity),
             backdropFilter: blur > 0 ? `blur(${blur.toFixed(1)}px)` : 'none',
@@ -415,11 +456,15 @@ export function SubtitleLayers({ videoRef, url, style, box, showText = true, edi
   // "Зөвхөн бичиг" горимд манай хадмал гарах үед л ажиллана (бусад үед киноны цагаан зүйлд хүрэхгүй)
   const timing = m.mode === 'smart' ? 'subs' : m.timing;
   // Тааруулах үед эффектийг үргэлж харуулна (зогсоосон кадр дээр үр дүнг харахын тулд)
-  const maskVisible = m.on && (editing || timing === 'always' || !cues.length || near);
+  // Админ: видео зогссон үед үргэлж харуулна (тааруулахад), тоглож байхад жинхэнэ цагаар
+  // ажиллана — "Өмнө нь эхлэх / Дараа нь үргэлжлэх"-ийн үр дүнг шууд харж болно.
+  const paused = usePaused(videoRef, editing);
+  const guideOn = editing && paused;
+  const maskVisible = m.on && (guideOn || timing === 'always' || !cues.length || near);
 
   return (
     <>
-      <CoverMask style={style} box={box} visible={maskVisible} videoRef={videoRef} guide={editing && m.on} />
+      <CoverMask style={style} box={box} visible={maskVisible} videoRef={videoRef} guide={guideOn && m.on} />
       {showText &&
         (box ? (
           // Хэвтээ байрлал: дэлгэц дээр харагдаж буй хэсэгт (зураг хажуугаараа тайрагдсан бол)
