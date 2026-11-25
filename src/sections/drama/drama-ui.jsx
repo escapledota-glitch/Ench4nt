@@ -258,9 +258,26 @@ export function PosterCard({ series, progressEp, width }) {
         {/* Дээд талын нимгэн гэрэл */}
         <Box sx={{ position: 'absolute', inset: 0, borderRadius: 'inherit', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)' }} />
 
-        {/* Үнийн шошго баруун дээд буланд; хоёулаа байвал тэмдэг нь доор нь (давхцахгүй) */}
-        {series.badge && <Badge sx={{ position: 'absolute', top: showPrice ? 36 : 8, left: 8, zIndex: 1 }}>{series.badge}</Badge>}
-        <PriceTag series={series} />
+        {/* Нэг мөрөнд: тэмдэг зүүн дээд, үнэ баруун дээд — бүх карт дээр ижил өндөрт, давхцахгүй */}
+        {(series.badge || showPrice) && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              right: 8,
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 0.5,
+              pointerEvents: 'none',
+            }}
+          >
+            {series.badge ? <Badge sx={{ flexShrink: 0 }}>{series.badge}</Badge> : <span />}
+            <PriceTag series={series} sx={{ position: 'static', flexShrink: 0, ml: 'auto', fontSize: 10.5, border: '1px solid transparent' }} />
+          </Box>
+        )}
 
         <Box
           className="play"
