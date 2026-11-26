@@ -618,7 +618,7 @@ function Spotlight({ series }) {
           />
           <Box>
             <Box sx={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, display: 'flex', alignItems: 'center', gap: 0.6 }}>
-              <Icon name="star" size={14} /> Редакторын сонголт
+              <Icon name="star" size={14} /> Санал болгох
             </Box>
             <Box component="h3" sx={{ m: 0, mt: 1, fontSize: { xs: 30, md: 40 }, fontWeight: 900, letterSpacing: -1.2, lineHeight: 1.02 }}>
               {series.title}
