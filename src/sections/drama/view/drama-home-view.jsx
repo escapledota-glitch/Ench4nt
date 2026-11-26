@@ -632,7 +632,7 @@ function Spotlight({ series }) {
                 href={`/drama/${series.id}/1`}
                 sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 3, height: 48, borderRadius: 1.5, background: C.grad, color: C.ink, fontWeight: 800, textDecoration: 'none', boxShadow: '0 12px 30px -10px rgba(212,175,106,0.7)' }}
               >
-                <Icon name="play" size={20} /> 1-р анги үзэх
+                <Icon name="play" size={20} /> {series.episodes === 1 ? 'Кино бүтнээр нь үзэх' : '1-р анги үзэх'}
               </Box>
               <Box sx={{ px: 1.5, py: 0.8, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.1)', fontSize: 13, fontWeight: 700 }}>
                 {freeLabel(series)}

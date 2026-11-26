@@ -253,7 +253,7 @@ function PlayButton({ series, lastEp }) {
       }}
     >
       <Icon name="play" size={20} />
-      {series.episodes === 1 ? 'Кино үзэх' : lastEp ? `${lastEp}-р ангиас үргэлжлүүлэх` : '1-р ангиас эхлэх'}
+      {series.episodes === 1 ? 'Кино бүтнээр нь үзэх' : lastEp ? `${lastEp}-р ангиас үргэлжлүүлэх` : '1-р ангиас эхлэх'}
     </Box>
   );
 }
